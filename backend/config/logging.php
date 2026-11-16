@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\Logging\RedactSensitiveDataTap;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -54,12 +55,14 @@ return [
 
         'stack' => [
             'driver' => 'stack',
+            'tap' => [RedactSensitiveDataTap::class],
             'channels' => explode(',', (string) env('LOG_STACK', 'single')),
             'ignore_exceptions' => false,
         ],
 
         'single' => [
             'driver' => 'single',
+            'tap' => [RedactSensitiveDataTap::class],
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'replace_placeholders' => true,
@@ -67,6 +70,7 @@ return [
 
         'daily' => [
             'driver' => 'daily',
+            'tap' => [RedactSensitiveDataTap::class],
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'max_files' => env('LOG_DAILY_DAYS', 14),
@@ -104,6 +108,7 @@ return [
 
         'stderr' => [
             'driver' => 'monolog',
+            'tap' => [RedactSensitiveDataTap::class],
             'level' => env('LOG_LEVEL', 'debug'),
             'handler' => StreamHandler::class,
             'handler_with' => [
