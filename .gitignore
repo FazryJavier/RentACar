@@ -1,0 +1,59 @@
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Backend (Laravel)
+backend/vendor/
+backend/storage/*.key
+backend/storage/app/private/*
+backend/storage/app/public/*
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/storage/logs/*
+backend/bootstrap/cache/*.php
+backend/public/storage
+backend/.phpunit.result.cache
+backend/coverage/
+
+# Frontend (Next.js)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/coverage/
+frontend/test-results/
+frontend/playwright-report/
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
+
+# Aset 3D yang lisensinya tidak mengizinkan redistribusi (diunduh manual)
+backend/database/seeders/assets/private/
+
+# Scaffolding (temporary)
+.scaffold/
+
+# Caches
+.phpunit.cache/
+backend/.phpstan.cache/
+.eslintcache
+frontend/blob-report/
+frontend/playwright/.cache/
+
+# Internal (must never be in the public repo)
+CLAUDE.md
+AGENTS.md
+.claude/
+.mcp.json
+openspec/
+docs/
+
+# OS & editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log
