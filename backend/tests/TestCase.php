@@ -2,26 +2,23 @@
 
 namespace Tests;
 
+use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use RuntimeException;
 
 abstract class TestCase extends BaseTestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->guardAgainstNonTestDatabase();
-    }
-
     /**
-     * Tests may create, truncate and drop tables. Refuse to run unless the
-     * configured database is a dedicated PostgreSQL test database (`*_test`).
+     * The guard runs as soon as the application exists — before setUpTraits(), so before
+     * RefreshDatabase or any test can create, truncate or drop tables.
      */
-    private function guardAgainstNonTestDatabase(): void
+    public function createApplication(): Application
     {
-        $connection = config('database.default');
-        $database = (string) config("database.connections.{$connection}.database");
+        $app = parent::createApplication();
+
+        $config = $app['config'];
+        $connection = (string) $config->get('database.default');
+        $database = (string) $config->get("database.connections.{$connection}.database");
 
         if ($connection !== 'pgsql' || ! str_ends_with($database, '_test')) {
             throw new RuntimeException(sprintf(
@@ -30,5 +27,7 @@ abstract class TestCase extends BaseTestCase
                 $database,
             ));
         }
+
+        return $app;
     }
 }

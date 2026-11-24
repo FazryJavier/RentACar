@@ -7,12 +7,15 @@ use Illuminate\Database\Seeder;
 class DatabaseSeeder extends Seeder
 {
     /**
-     * Seed the application's database.
-     *
-     * Reference and demo seeders are added by later stories (US-03, US-21).
+     * Safe, repeatable seeding for every environment: it only inserts what is missing
+     * and never truncates or deletes. Demo data is added by a separate, environment-guarded seeder.
      */
     public function run(): void
     {
-        //
+        $this->call([
+            SettingsSeeder::class,
+            ReferenceSeeder::class,
+            SuperAdminSeeder::class,
+        ]);
     }
 }

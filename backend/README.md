@@ -85,6 +85,28 @@ $page = CollectionQuery::fromRequest($request, $spec)->paginate(Car::query());
 return ApiResponse::paginated($page);
 ```
 
+## Skema database
+
+Tabel v1.0 (migrasi di `database/migrations`): `branches`, `brands`, `categories`, `admins`, `customers`, `cars`, `car_photos`, `car_models_3d`, `car_conditions` (+ foto), `car_inspections`, `bookings`, `booking_status_histories`, `payments`, `idempotency_keys`, `settings`, `audit_logs`, `events`, `testimonials`.
+
+Aturan yang dijaga **database**, bukan hanya kode:
+
+- **Tidak ada pemesanan ganda:** exclusion constraint `bookings_no_overlap` (ekstensi `btree_gist`) menolak rentang `[pickup_at, blocked_until)` yang tumpang tindih untuk mobil yang sama selama statusnya menahan jadwal (`pending_payment`, `pending_verification`, `confirmed`, `ongoing`) → SQLSTATE `23P01` → API 409.
+- **Keunikan:** plat nomor unik di antara mobil yang belum dihapus; email pelanggan/admin dan nama merek/kategori unik tanpa peka huruf besar/kecil; satu pembayaran `pending` per pemesanan.
+- **CHECK:** daftar nilai enum (dibuat dari enum PHP di `app/Enums`), rentang harga/tahun/kursi, Staf wajib punya cabang dan Super Admin tidak, total pemesanan = hari × harga + deposit.
+
+Uang disimpan `bigint` Rupiah, waktu `timestamptz` (UTC).
+
+## Seeding
+
+```bash
+php artisan db:seed     # aman diulang: hanya menambah yang belum ada, tidak pernah menghapus
+```
+
+- `SettingsSeeder` — pengaturan default (tidak menimpa nilai yang sudah diubah).
+- `ReferenceSeeder` — kategori dan merek umum (berdasarkan `slug`).
+- `SuperAdminSeeder` — Super Admin pertama dari `SEED_SUPERADMIN_EMAIL` dan `SEED_SUPERADMIN_PASSWORD` di `.env` (gagal jika kosong; password tidak pernah ditampilkan).
+
 ## Konfigurasi
 
 Salin `.env.example` ke `.env`. Jangan commit `.env` atau nilai rahasia apa pun.

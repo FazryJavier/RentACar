@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\User;
+use App\Models\Customer;
 
 return [
 
@@ -64,7 +64,8 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', User::class),
+            // Temporary default until the customer/admin auth stories define dedicated guards.
+            'model' => env('AUTH_MODEL', Customer::class),
         ],
 
         // 'users' => [
