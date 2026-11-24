@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 it('returns 200 with the standard envelope when all dependencies are up', function () {
@@ -28,7 +27,10 @@ it('is publicly accessible without authentication', function () {
 });
 
 it('returns 503 with database=fail when the database is unreachable', function () {
-    DB::shouldReceive('select')->andThrow(new RuntimeException('SQLSTATE[08006] host=db.internal password=secret'));
+    // Simulate a real connection failure (the database does not exist) instead of mocking the
+    // DB facade: facade mocks break whenever the framework makes additional DB calls.
+    config(['database.connections.pgsql.database' => 'rentacar_missing_db_test']);
+    DB::purge('pgsql');
 
     $response = $this->getJson('/api/v1/health');
 
@@ -46,13 +48,21 @@ it('returns 503 with database=fail when the database is unreachable', function (
         ]);
 
     expect($response->getContent())
-        ->not->toContain('db.internal')
-        ->not->toContain('secret')
+        ->not->toContain('rentacar_missing_db_test')
         ->not->toContain('SQLSTATE');
 });
 
 it('returns 503 with cache=fail when the cache store fails', function () {
-    Cache::shouldReceive('put')->andThrow(new RuntimeException('Connection refused [tcp://10.0.0.5:6379]'));
+    // Default cache store points at an unreachable Redis; rate limiting keeps its own working store.
+    config([
+        'cache.limiter' => 'array',
+        'cache.default' => 'redis',
+        'database.redis.client' => 'predis',
+        'database.redis.cache.host' => '127.0.0.1',
+        'database.redis.cache.port' => 1,
+        'database.redis.cache.password' => null,
+        'database.redis.cache.timeout' => 0.5,
+    ]);
 
     $response = $this->getJson('/api/v1/health');
 
@@ -60,7 +70,7 @@ it('returns 503 with cache=fail when the cache store fails', function () {
         ->assertJsonPath('errors.0.details.cache', 'fail')
         ->assertJsonPath('errors.0.details.database', 'ok');
 
-    expect($response->getContent())->not->toContain('10.0.0.5');
+    expect($response->getContent())->not->toContain('127.0.0.1')->not->toContain('Connection refused');
 });
 
 it('answers a wrong method with a JSON 405 even without an Accept header', function () {
