@@ -55,7 +55,7 @@ export function MobileMenu() {
             </ul>
           </nav>
           <div className="flex flex-col gap-3 pt-4">
-            <AccountLink onNavigate={close} className="w-full" />
+            <AccountLink onNavigate={close} variant="list" className="w-full" />
             <Button asChild size="lg" fullWidth arrow>
               <Link href="/armada" onClick={close}>
                 Sewa Sekarang

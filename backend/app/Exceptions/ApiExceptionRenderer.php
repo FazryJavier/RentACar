@@ -38,6 +38,7 @@ final class ApiExceptionRenderer
                 $e->apiMessage(),
                 $e->apiErrors(),
                 $this->debugMeta($e, $e->apiStatus()),
+                $e instanceof ApiRenderableWithHeaders ? $e->apiHeaders() : [],
             ),
             $e instanceof ValidationException => ApiResponse::error(
                 422,

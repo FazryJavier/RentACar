@@ -16,6 +16,8 @@ final class ErrorCatalog
 
     public const FORBIDDEN = 'forbidden';
 
+    public const ACCOUNT_BLOCKED = 'account_blocked';
+
     public const NOT_FOUND = 'not_found';
 
     public const METHOD_NOT_ALLOWED = 'method_not_allowed';
@@ -44,6 +46,7 @@ final class ErrorCatalog
         self::MALFORMED_JSON => 'Format JSON pada permintaan tidak valid.',
         self::UNAUTHENTICATED => 'Silakan masuk terlebih dahulu.',
         self::FORBIDDEN => 'Anda tidak memiliki akses untuk tindakan ini.',
+        self::ACCOUNT_BLOCKED => 'Akun dinonaktifkan. Hubungi admin.',
         self::NOT_FOUND => 'Data atau alamat yang diminta tidak ditemukan.',
         self::METHOD_NOT_ALLOWED => 'Metode HTTP tidak diizinkan untuk alamat ini.',
         self::CONFLICT => 'Permintaan bertentangan dengan kondisi data saat ini.',
