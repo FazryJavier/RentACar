@@ -56,3 +56,34 @@ export function mockApi(routes: Record<string, MockResponse | MockResponse[]>) {
 
   return calls;
 }
+
+export const superAdminFixture = {
+  id: 1,
+  name: "Budi Pemilik",
+  email: "owner@example.test",
+  role: "super_admin" as const,
+  branch: null,
+  menu: [
+    "dashboard",
+    "bookings",
+    "payments",
+    "cars",
+    "brands",
+    "categories",
+    "branches",
+    "customers",
+    "admins",
+    "audit_logs",
+  ],
+  created_at: "2026-11-26T00:00:00Z",
+};
+
+export const staffFixture = {
+  id: 2,
+  name: "Sari Staf",
+  email: "sari@example.test",
+  role: "staff" as const,
+  branch: { id: 3, name: "Jakarta Selatan" },
+  menu: ["dashboard", "bookings", "payments", "cars", "brands", "categories", "customers"],
+  created_at: "2026-11-26T00:00:00Z",
+};

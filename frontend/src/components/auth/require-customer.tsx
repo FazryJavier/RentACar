@@ -5,6 +5,7 @@ import { useEffect, type ReactNode } from "react";
 import { Skeleton } from "@/components/ui";
 import { useCurrentCustomer } from "@/hooks/useCurrentCustomer";
 import { loginUrl } from "@/lib/auth";
+import { takeLogoutDestination } from "@/lib/logout-intent";
 
 /** Renders customer pages only for a verified session; otherwise goes to the login page. */
 export function RequireCustomer({ children }: { children: ReactNode }) {
@@ -15,7 +16,9 @@ export function RequireCustomer({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (status === "guest") {
-      router.replace(loginUrl(search ? `${pathname}?${search}` : pathname));
+      router.replace(
+        takeLogoutDestination() ?? loginUrl(search ? `${pathname}?${search}` : pathname),
+      );
     }
   }, [status, pathname, search, router]);
 

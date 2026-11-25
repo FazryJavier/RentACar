@@ -43,6 +43,14 @@ next.config.ts        Rewrite /api, /sanctum, /docs, /storage → Laravel (BACKE
 - Menu akun di header: Pemesanan Saya · Profil · Keluar.
 - E2E berjalan dengan satu worker (`playwright.config.ts`) karena semua spec berbagi satu backend, database, dan batas laju per IP.
 
+## Admin panel
+
+- `app/admin/(admin-auth)`: `/admin/masuk`, `/admin/lupa-kata-sandi`, `/admin/atur-ulang-kata-sandi` (layout ringkas tanpa header/footer publik). Form yang sama dengan pelanggan lewat prop `audience="admin"`.
+- `app/admin/(panel)`: `RequireAdmin` + `AdminShell` (sidebar 264 px yang bisa diciutkan ke 72 px dan diingat per browser, laci di bawah 1024 px, topbar dengan cabang Staf dan menu akun). `/admin` = halaman sambutan; modul yang belum dibangun menampilkan "Segera hadir".
+- Menu sidebar berasal dari `GET /api/v1/admin/me` (`menu`), dipetakan di `src/lib/admin-menu.ts`.
+- `proxy.ts` juga menjaga `/admin/*` (kecuali halaman masuk/lupa/atur ulang) → `/admin/masuk?next=…`.
+- E2E admin (`tests/e2e/admin-panel.spec.ts`) berjalan bila `E2E_ADMIN_EMAIL` dan `E2E_ADMIN_PASSWORD` di-set.
+
 ## Design tokens & komponen
 
 - **Hanya token.** Palet, shadow, radius, skala tipografi, breakpoint, dan easing bawaan Tailwind dimatikan; utilitas yang tersedia berasal dari `tokens.css` (mis. `bg-surface`, `text-text-muted`, `text-h2`, `rounded-lg`, `shadow-md`, `sm:` = 600 px). Spacing berbasis 4 px (`p-4` = 16 px). Jangan memakai nilai arbitrer `[...]` atau warna hex di `components/ui` — dicek oleh tes.

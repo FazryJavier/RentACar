@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Admin;
 use App\Models\Customer;
 
 return [
@@ -38,10 +39,16 @@ return [
     */
 
     'guards' => [
-        // Customers (website). Admins get their own guard in the admin auth story.
+        // Customers (website).
         'web' => [
             'driver' => 'session',
             'provider' => 'customers',
+        ],
+
+        // Admin panel accounts. Separate guard: a customer session never satisfies admin routes.
+        'admin' => [
+            'driver' => 'session',
+            'provider' => 'admins',
         ],
     ],
 
@@ -66,6 +73,11 @@ return [
         'customers' => [
             'driver' => 'eloquent',
             'model' => Customer::class,
+        ],
+
+        'admins' => [
+            'driver' => 'eloquent',
+            'model' => Admin::class,
         ],
     ],
 
@@ -92,6 +104,13 @@ return [
         'customers' => [
             'provider' => 'customers',
             'table' => 'customer_password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+
+        'admins' => [
+            'provider' => 'admins',
+            'table' => 'admin_password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,
         ],

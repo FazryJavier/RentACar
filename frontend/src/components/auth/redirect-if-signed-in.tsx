@@ -2,14 +2,20 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
-import { useCurrentCustomer } from "@/hooks/useCurrentCustomer";
 import { safeNextPath } from "@/lib/auth";
+import { AUDIENCES, useAudienceSession, type Audience } from "./audience";
 
-/** Auth pages are for guests: a signed-in customer is sent on to `next` (or home). */
-export function RedirectIfSignedIn({ children }: { children: ReactNode }) {
+/** Auth pages are for guests: a signed-in account is sent on to `next` (or its home). */
+export function RedirectIfSignedIn({
+  children,
+  audience = "customer",
+}: {
+  children: ReactNode;
+  audience?: Audience;
+}) {
   const router = useRouter();
-  const next = safeNextPath(useSearchParams().get("next"));
-  const { status } = useCurrentCustomer();
+  const next = safeNextPath(useSearchParams().get("next"), AUDIENCES[audience].within);
+  const { status } = useAudienceSession(audience);
 
   useEffect(() => {
     if (status === "signed-in") {

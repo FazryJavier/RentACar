@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { Button, Field, Input } from "@/components/ui";
 import { apiPost } from "@/lib/api";
 import { forgotSchema, type ForgotValues } from "@/lib/validation/customer";
+import { AUDIENCES, type Audience } from "./audience";
 import { FormAlert } from "./form-alert";
 import { TextLink } from "./text-link";
 import { useApiFormErrors } from "./use-api-form";
@@ -13,7 +14,8 @@ import { useApiFormErrors } from "./use-api-form";
 /** The confirmation never depends on whether the email exists. */
 export const FORGOT_CONFIRMATION = "Jika email terdaftar, tautan atur ulang telah dikirim.";
 
-export function ForgotForm() {
+export function ForgotForm({ audience = "customer" }: { audience?: Audience }) {
+  const config = AUDIENCES[audience];
   const [sent, setSent] = useState<string | null>(null);
   const {
     register,
@@ -26,7 +28,7 @@ export function ForgotForm() {
   const onSubmit = handleSubmit(async (values) => {
     setAlert(null);
     try {
-      await apiPost<null>("/auth/forgot-password", values);
+      await apiPost<null>(`${config.api}/forgot-password`, values);
       setSent(FORGOT_CONFIRMATION);
     } catch (error) {
       handle(error);
@@ -40,7 +42,7 @@ export function ForgotForm() {
         <p className="text-body-sm text-text-muted">
           Periksa kotak masuk email Anda. Tautan berlaku 60 menit dan hanya bisa dipakai sekali.
         </p>
-        <TextLink href="/masuk">Kembali ke halaman masuk</TextLink>
+        <TextLink href={config.login}>Kembali ke halaman masuk</TextLink>
       </div>
     );
   }

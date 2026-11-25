@@ -5,6 +5,7 @@ use App\Exceptions\ApiValidationException;
 use App\Exceptions\MalformedJsonException;
 use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\DefaultNoStore;
+use App\Http\Middleware\EnsureAdminRole;
 use App\Http\Middleware\EnsureSupportedMediaType;
 use App\Http\Middleware\LimitJsonBody;
 use App\Http\Middleware\RejectMalformedJson;
@@ -34,7 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // API guests get a 401 envelope, never a redirect; web guests go to the frontend login page.
         $middleware->redirectGuestsTo(fn (Request $request) => $request->is('api/*') ? null : '/masuk');
 
-        $middleware->alias(['limit_body' => LimitJsonBody::class]);
+        $middleware->alias(['limit_body' => LimitJsonBody::class, 'admin.role' => EnsureAdminRole::class]);
 
         $middleware->api(append: [
             DefaultNoStore::class,

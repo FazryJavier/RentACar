@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domain\Customer\Exceptions;
+namespace App\Domain\Auth\Exceptions;
 
 use App\Exceptions\ApiRenderableWithHeaders;
 use App\Exceptions\ErrorCatalog;

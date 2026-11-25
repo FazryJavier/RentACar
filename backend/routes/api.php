@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\Auth\ForgotPasswordController as AdminForgotPasswordController;
+use App\Http\Controllers\Api\V1\Admin\Auth\LoginController as AdminLoginController;
+use App\Http\Controllers\Api\V1\Admin\Auth\LogoutController as AdminLogoutController;
+use App\Http\Controllers\Api\V1\Admin\Auth\ResetPasswordController as AdminResetPasswordController;
+use App\Http\Controllers\Api\V1\Admin\MeController as AdminMeController;
 use App\Http\Controllers\Api\V1\Auth\ForgotPasswordController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\LogoutController;
@@ -7,6 +12,7 @@ use App\Http\Controllers\Api\V1\Auth\RegisterController;
 use App\Http\Controllers\Api\V1\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\MeController;
+use App\Http\Middleware\EnsureAdminActive;
 use App\Http\Middleware\EnsureCustomerNotBlocked;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Middleware\AuthenticateSession;
@@ -43,4 +49,19 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             Route::patch('/', [MeController::class, 'update'])->name('update');
             Route::put('password', [MeController::class, 'password'])->name('password');
         });
+
+    // Admin panel (guard `admin`). Super Admin-only modules add `admin.role:super_admin`.
+    Route::prefix('admin')->name('admin.')->group(function (): void {
+        Route::prefix('auth')->name('auth.')->group(function (): void {
+            Route::post('login', AdminLoginController::class)->middleware('throttle:public')->name('login');
+            Route::post('forgot-password', AdminForgotPasswordController::class)->middleware('throttle:auth')->name('forgot-password');
+            Route::post('reset-password', AdminResetPasswordController::class)->middleware('throttle:auth')->name('reset-password');
+        });
+
+        Route::middleware(['auth:admin', AuthenticateSession::class, EnsureAdminActive::class, 'throttle:admin'])->group(function (): void {
+            Route::post('auth/logout', AdminLogoutController::class)->name('auth.logout');
+            Route::get('me', [AdminMeController::class, 'show'])->name('me.show');
+            Route::put('me/password', [AdminMeController::class, 'password'])->name('me.password');
+        });
+    });
 });

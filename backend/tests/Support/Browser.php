@@ -26,8 +26,11 @@ final class Browser
      */
     public function json(string $method, string $uri, array $data = [], array $headers = []): TestResponse
     {
-        // Never let the in-memory guard of a previous request leak into this one.
+        // Never let the in-memory guard or session of a previous request leak into this one: in
+        // tests the session store object is reused across requests, and starting it merges the
+        // stored data into whatever attributes it still holds. Stored sessions (by ID) are kept.
         app('auth')->forgetGuards();
+        app('session')->driver()->flush();
 
         $server = ['CONTENT_TYPE' => 'application/json', 'REMOTE_ADDR' => '203.0.113.10'];
         foreach ([

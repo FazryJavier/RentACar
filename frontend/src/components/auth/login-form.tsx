@@ -4,17 +4,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button, Checkbox, Field, Input } from "@/components/ui";
-import { useSetCurrentCustomer, type CurrentCustomer } from "@/hooks/useCurrentCustomer";
 import { ApiError, apiPost } from "@/lib/api";
 import { safeNextPath } from "@/lib/auth";
 import { loginSchema, type LoginValues } from "@/lib/validation/customer";
+import { AUDIENCES, useAudienceSetter, type Audience } from "./audience";
 import { FormAlert } from "./form-alert";
 import { useApiFormErrors } from "./use-api-form";
 
-export function LoginForm() {
+export function LoginForm({ audience = "customer" }: { audience?: Audience }) {
+  const config = AUDIENCES[audience];
   const router = useRouter();
-  const next = safeNextPath(useSearchParams().get("next"));
-  const setCustomer = useSetCurrentCustomer();
+  const next = safeNextPath(useSearchParams().get("next"), config.within);
+  const setSession = useAudienceSetter(audience);
   const {
     register,
     handleSubmit,
@@ -31,8 +32,8 @@ export function LoginForm() {
   const onSubmit = handleSubmit(async (values) => {
     setAlert(null);
     try {
-      const customer = await apiPost<CurrentCustomer>("/auth/login", values);
-      setCustomer(customer);
+      const account = await apiPost<unknown>(`${config.api}/login`, values);
+      setSession(account);
       router.replace(next);
     } catch (error) {
       handle(error);
