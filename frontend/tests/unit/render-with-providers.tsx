@@ -4,9 +4,9 @@ import type { ReactElement } from "react";
 import { vi } from "vitest";
 import { ToastProvider } from "@/components/ui";
 
-/** Render with a fresh QueryClient (no retries, no cache sharing) and the toast region. */
+/** Render with a fresh QueryClient per test (no retries) and the toast region. */
 export function renderWithProviders(ui: ReactElement): RenderResult & { queryClient: QueryClient } {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const result = render(
     <QueryClientProvider client={queryClient}>
       <ToastProvider>{ui}</ToastProvider>

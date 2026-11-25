@@ -6,7 +6,16 @@ import { mockFetchJson, renderWithProviders } from "../../../../tests/unit/rende
 
 const navigation = vi.hoisted(() => ({ pathname: "/" }));
 
-vi.mock("next/navigation", () => ({ usePathname: () => navigation.pathname }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => navigation.pathname,
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    refresh: vi.fn(),
+    back: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+}));
 
 const guest = {
   code: 401,
@@ -93,7 +102,7 @@ describe("Header", () => {
     expect(screen.getByRole("banner")).toHaveAttribute("data-solid", "true");
   });
 
-  it("shows the signed-in customer's first name", async () => {
+  it("shows an account menu for the signed-in customer", async () => {
     const customer = { id: 7, name: "Budi Santoso", email: "budi@example.test" };
     vi.stubGlobal(
       "fetch",
@@ -108,8 +117,10 @@ describe("Header", () => {
     );
     renderWithProviders(<Header />);
 
-    const account = await screen.findByRole("link", { name: "Akun Budi" });
-    expect(account).toHaveAttribute("href", "/profil");
+    expect(await screen.findByRole("button", { name: "Akun Budi" })).toHaveAttribute(
+      "aria-haspopup",
+      "menu",
+    );
     expect(screen.queryByRole("link", { name: "Masuk" })).not.toBeInTheDocument();
   });
 });

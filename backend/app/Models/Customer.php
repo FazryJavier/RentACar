@@ -2,20 +2,23 @@
 
 namespace App\Models;
 
+use App\Notifications\CustomerResetPassword;
 use Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
 /**
- * Customer account. Guard wiring happens in the customer auth story.
+ * Customer account (guard `web`, password broker `customers`).
  */
 class Customer extends Authenticatable
 {
     /** @use HasFactory<CustomerFactory> */
     use HasFactory;
 
+    use Notifiable;
     use SoftDeletes;
 
     protected $fillable = [
@@ -39,6 +42,14 @@ class Customer extends Authenticatable
             'updated_at' => 'immutable_datetime',
             'deleted_at' => 'immutable_datetime',
         ];
+    }
+
+    /**
+     * @param  string  $token
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new CustomerResetPassword($token));
     }
 
     /** @return HasMany<Booking, $this> */

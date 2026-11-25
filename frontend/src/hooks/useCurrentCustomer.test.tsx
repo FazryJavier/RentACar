@@ -42,7 +42,7 @@ describe("useCurrentCustomer", () => {
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
-  it("maps 404 (endpoint not available yet) to guest", async () => {
+  it("maps other failures such as 404 to guest without throwing", async () => {
     const { result } = setup(404, failure(404));
 
     await waitFor(() => expect(result.current.status).toBe("guest"));
@@ -55,7 +55,15 @@ describe("useCurrentCustomer", () => {
   });
 
   it("returns the signed-in customer", async () => {
-    const customer = { id: 7, name: "Budi Santoso", email: "budi@example.test" };
+    const customer = {
+      id: 7,
+      name: "Budi Santoso",
+      email: "budi@example.test",
+      phone: "6281234567890",
+      address: null,
+      license_number: null,
+      created_at: "2026-11-25T00:00:00Z",
+    };
     const { result } = setup(200, {
       code: 200,
       success: true,

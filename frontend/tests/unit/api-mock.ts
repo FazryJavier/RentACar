@@ -1,0 +1,58 @@
+import { vi } from "vitest";
+
+export type MockResponse = { status: number; body?: unknown; headers?: Record<string, string> };
+
+export const customerFixture = {
+  id: 7,
+  name: "Budi Santoso",
+  email: "budi@example.test",
+  phone: "6281234567890",
+  address: "Jl. Contoh 1",
+  license_number: "123456789012",
+  created_at: "2026-11-25T00:00:00Z",
+};
+
+export function ok(data: unknown, message = "OK") {
+  return { code: 200, success: true, message, data, errors: null, meta: null };
+}
+
+export function fail(status: number, message: string, errors: unknown[] = []) {
+  return { code: status, success: false, message, data: null, errors, meta: null };
+}
+
+/**
+ * Routes `fetch` by "METHOD path" (path without `/api/v1`). The CSRF endpoint always succeeds.
+ * Returns the list of calls for assertions.
+ */
+export function mockApi(routes: Record<string, MockResponse | MockResponse[]>) {
+  const calls: { key: string; body: unknown }[] = [];
+  const queues = new Map(
+    Object.entries(routes).map(([key, value]) => [
+      key,
+      Array.isArray(value) ? [...value] : [value],
+    ]),
+  );
+
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string, init: RequestInit = {}) => {
+      if (url === "/sanctum/csrf-cookie") {
+        document.cookie = "XSRF-TOKEN=test; path=/";
+        return new Response(null, { status: 204 });
+      }
+      const key = `${init.method ?? "GET"} ${url.replace("/api/v1", "")}`;
+      calls.push({ key, body: init.body ? JSON.parse(String(init.body)) : undefined });
+      const queue = queues.get(key);
+      const next = queue && queue.length > 1 ? queue.shift()! : queue?.[0];
+      if (!next) {
+        return new Response(JSON.stringify(fail(404, "not mocked")), { status: 404 });
+      }
+      return new Response(JSON.stringify(next.body ?? ok(null)), {
+        status: next.status,
+        headers: { "Content-Type": "application/json", ...next.headers },
+      });
+    }),
+  );
+
+  return calls;
+}

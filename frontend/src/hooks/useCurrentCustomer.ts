@@ -1,9 +1,19 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { ApiError, apiGet } from "@/lib/api";
 
-export type CurrentCustomer = { id: number; name: string; email: string };
+/** Shape of `CustomerResource` from the API. */
+export type CurrentCustomer = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  address: string | null;
+  license_number: string | null;
+  created_at: string;
+};
 
 export type CurrentCustomerState =
   | { status: "loading"; customer: null }
@@ -20,11 +30,11 @@ async function fetchCurrentCustomer({
   try {
     return await apiGet<CurrentCustomer>("/me", { signal });
   } catch (error) {
-    // 401: not signed in. 404: the endpoint is not available yet. Anything else is treated as a
-    // guest too: the header must never break because the session check failed.
+    // 401 means "not signed in". Any other failure is also shown as guest: the header must
+    // never break because the session check failed.
     if (
       process.env.NODE_ENV === "development" &&
-      !(error instanceof ApiError && [401, 404].includes(error.status))
+      !(error instanceof ApiError && error.status === 401)
     ) {
       console.warn("Session check failed; showing guest state.", error);
     }
@@ -48,4 +58,17 @@ export function useCurrentCustomer(): CurrentCustomerState {
   return query.data
     ? { status: "signed-in", customer: query.data }
     : { status: "guest", customer: null };
+}
+
+/** Writes the session state after login, registration, profile updates or logout. */
+export function setCurrentCustomer(
+  queryClient: QueryClient,
+  customer: CurrentCustomer | null,
+): void {
+  queryClient.setQueryData(CURRENT_CUSTOMER_KEY, customer);
+}
+
+export function useSetCurrentCustomer(): (customer: CurrentCustomer | null) => void {
+  const queryClient = useQueryClient();
+  return useCallback((customer) => setCurrentCustomer(queryClient, customer), [queryClient]);
 }

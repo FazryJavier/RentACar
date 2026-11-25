@@ -97,6 +97,24 @@ Aturan yang dijaga **database**, bukan hanya kode:
 
 Uang disimpan `bigint` Rupiah, waktu `timestamptz` (UTC).
 
+## Autentikasi pelanggan
+
+Sanctum SPA (cookie sesi + CSRF) di origin yang sama dengan frontend. Guard `web` (tabel `customers`), password broker `customers` (tabel `customer_password_reset_tokens`, token 60 menit, sekali pakai).
+
+| Endpoint (`/api/v1`) | Keterangan |
+|---|---|
+| `POST /auth/register` | Daftar + langsung masuk (201). Email disimpan huruf kecil, No. HP sebagai `62…` |
+| `POST /auth/login` | Masuk; pesan gagal selalu "Email atau kata sandi salah."; 5 kegagalan/menit per IP + email → 429 + `Retry-After`; akun diblokir → 403 `account_blocked` |
+| `POST /auth/logout` | Keluar (sesi dihapus di server) |
+| `POST /auth/forgot-password` | Respons selalu sama; email berisi tautan ke `{FRONTEND_URL}/atur-ulang-kata-sandi` |
+| `POST /auth/reset-password` | Token tidak valid/kedaluwarsa → 422 pada `token` |
+| `GET` / `PATCH /me`, `PUT /me/password` | Profil sendiri; ubah kata sandi wajib kata sandi lama |
+
+- Rute pelanggan memakai `auth:web` + `AuthenticateSession` (Sanctum): setelah kata sandi diubah atau diatur ulang, sesi lain keluar otomatis pada permintaan berikutnya.
+- Login gagal, login akun diblokir, atur ulang dan ubah kata sandi dicatat di `audit_logs` (tanpa kata sandi).
+- Lokal `MAIL_MAILER=log`: tautan atur ulang ada di `storage/logs/laravel.log`.
+- Koneksi PostgreSQL memakai zona waktu sesi `UTC` (`config/database.php`), sehingga `timestamptz` selalu benar apa pun zona waktu server.
+
 ## Seeding
 
 ```bash

@@ -55,6 +55,11 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
+    | Public origin of the Next.js frontend; used for links in emails (e.g. password reset).
+    */
+    'frontend_url' => env('FRONTEND_URL', env('APP_URL', 'http://localhost:3000')),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------

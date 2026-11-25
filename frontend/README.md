@@ -35,6 +35,14 @@ next.config.ts        Rewrite /api, /sanctum, /docs, /storage → Laravel (BACKE
 - **Sesi pelanggan:** `useCurrentCustomer()` → `{ status: "loading" | "guest" | "signed-in", customer }`. 401/404 dianggap tamu; header menampilkan "Masuk" atau nama pelanggan.
 - **Banner demo** disembunyikan per sesi browser (`sessionStorage`), tetap berfungsi jika storage diblokir.
 
+## Akun pelanggan
+
+- Halaman `(auth)`: `/masuk`, `/daftar`, `/lupa-kata-sandi`, `/atur-ulang-kata-sandi`; `(customer)`: `/profil` (tab Data diri / Ubah kata sandi). Form memakai React Hook Form + Zod (aturan sama dengan server; server tetap penentu).
+- `apiPost/apiPatch/apiPut` mengambil cookie CSRF (`/sanctum/csrf-cookie`) bila belum ada, mengirim `X-XSRF-TOKEN`, dan mengulang sekali saat 419. `ApiError.retryAfter` berisi detik dari `Retry-After`.
+- `src/proxy.ts` mengarahkan `/pemesanan`, `/profil`, `/checkout` ke `/masuk?next=…` bila cookie sesi tidak ada; halaman tetap memeriksa `/me` (`RequireCustomer`). `next` hanya diterima bila path relatif (`safeNextPath`).
+- Menu akun di header: Pemesanan Saya · Profil · Keluar.
+- E2E berjalan dengan satu worker (`playwright.config.ts`) karena semua spec berbagi satu backend, database, dan batas laju per IP.
+
 ## Design tokens & komponen
 
 - **Hanya token.** Palet, shadow, radius, skala tipografi, breakpoint, dan easing bawaan Tailwind dimatikan; utilitas yang tersedia berasal dari `tokens.css` (mis. `bg-surface`, `text-text-muted`, `text-h2`, `rounded-lg`, `shadow-md`, `sm:` = 600 px). Spacing berbasis 4 px (`p-4` = 16 px). Jangan memakai nilai arbitrer `[...]` atau warna hex di `components/ui` — dicek oleh tes.

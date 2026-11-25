@@ -44,6 +44,9 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Laravel writes timestamps without an offset, in the app timezone (UTC). The session
+            // must interpret them as UTC, whatever the server's default timezone is.
+            'timezone' => 'UTC',
         ],
 
     ],

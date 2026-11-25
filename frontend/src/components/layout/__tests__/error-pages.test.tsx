@@ -6,7 +6,16 @@ import GlobalError from "@/app/global-error";
 import NotFound, { metadata } from "@/app/not-found";
 import { mockFetchJson, renderWithProviders } from "../../../../tests/unit/render-with-providers";
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/tidak-ada" }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/tidak-ada",
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    refresh: vi.fn(),
+    back: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+}));
 
 beforeEach(() => {
   vi.stubGlobal(

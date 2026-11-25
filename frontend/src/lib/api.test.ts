@@ -14,7 +14,7 @@ function respond(status: number, body: string, contentType = "application/json")
 }
 
 describe("apiGet", () => {
-  it("returns data from a success envelope using same-origin credentials", async () => {
+  it("returns data from a success envelope with the session cookie", async () => {
     const fetchMock = respond(
       200,
       JSON.stringify({
@@ -32,7 +32,7 @@ describe("apiGet", () => {
       "/api/v1/me",
       expect.objectContaining({
         method: "GET",
-        credentials: "same-origin",
+        credentials: "include",
         headers: { Accept: "application/json" },
       }),
     );
