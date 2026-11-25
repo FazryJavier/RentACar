@@ -2,8 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Auth\Exceptions\AccountBlocked;
 use App\Domain\Customer\CustomerSession;
-use App\Domain\Customer\Exceptions\AccountBlocked;
 use App\Models\Customer;
 use Closure;
 use Illuminate\Http\Request;

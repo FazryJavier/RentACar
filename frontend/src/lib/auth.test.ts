@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isProtectedPath, loginUrl, safeNextPath } from "./auth";
+import { adminLoginUrl, isAdminPanelPath, isProtectedPath, loginUrl, safeNextPath } from "./auth";
 
 describe("safeNextPath", () => {
   it.each([
@@ -40,5 +40,34 @@ describe("protected paths", () => {
   it("builds the login URL with an encoded next", () => {
     expect(loginUrl("/profil?tab=password")).toBe("/masuk?next=%2Fprofil%3Ftab%3Dpassword");
     expect(loginUrl("//evil")).toBe("/masuk");
+  });
+});
+
+describe("admin paths", () => {
+  it.each([
+    ["/admin/profil", "/admin/profil"],
+    ["/admin", "/admin"],
+    ["/profil", "/admin"],
+    ["//evil.example", "/admin"],
+    ["/administrator", "/admin"],
+  ])("keeps %s inside /admin → %s", (next, expected) => {
+    expect(safeNextPath(next, "/admin")).toBe(expected);
+  });
+
+  it.each([
+    ["/admin", true],
+    ["/admin/mobil/1", true],
+    ["/admin/masuk", false],
+    ["/admin/lupa-kata-sandi", false],
+    ["/admin/atur-ulang-kata-sandi", false],
+    ["/armada", false],
+  ])("%s is a protected admin panel path → %s", (path, expected) => {
+    expect(isAdminPanelPath(path)).toBe(expected);
+  });
+
+  it("builds the admin login URL", () => {
+    expect(adminLoginUrl("/admin/profil")).toBe("/admin/masuk?next=%2Fadmin%2Fprofil");
+    expect(adminLoginUrl("/admin")).toBe("/admin/masuk");
+    expect(adminLoginUrl("/profil")).toBe("/admin/masuk");
   });
 });

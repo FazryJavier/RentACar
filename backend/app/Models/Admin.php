@@ -3,14 +3,16 @@
 namespace App\Models;
 
 use App\Enums\AdminRole;
+use App\Notifications\AdminResetPassword;
 use Database\Factories\AdminFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
 /**
- * Admin panel account (Super Admin or branch Staff). Guard wiring happens in the admin auth story.
+ * Admin panel account (Super Admin or branch Staff); guard `admin`, password broker `admins`.
  *
  * @property int $id
  * @property string $name
@@ -24,6 +26,7 @@ class Admin extends Authenticatable
     /** @use HasFactory<AdminFactory> */
     use HasFactory;
 
+    use Notifiable;
     use SoftDeletes;
 
     protected $fillable = ['name', 'email', 'password', 'role', 'branch_id', 'is_active', 'last_login_at'];
@@ -50,6 +53,14 @@ class Admin extends Authenticatable
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * @param  string  $token
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new AdminResetPassword($token));
     }
 
     public function isSuperAdmin(): bool

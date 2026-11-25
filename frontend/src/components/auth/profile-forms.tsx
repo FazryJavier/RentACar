@@ -94,7 +94,7 @@ export function ProfileForm({ customer }: { customer: CurrentCustomer }) {
   );
 }
 
-export function ChangePasswordForm() {
+export function ChangePasswordForm({ endpoint = "/me/password" }: { endpoint?: string }) {
   const toast = useToast();
   const {
     register,
@@ -115,7 +115,7 @@ export function ChangePasswordForm() {
   const onSubmit = handleSubmit(async (values) => {
     setAlert(null);
     try {
-      await apiPut<null>("/me/password", values);
+      await apiPut<null>(endpoint, values);
       reset();
       toast.show({
         tone: "success",

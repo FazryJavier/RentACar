@@ -8,6 +8,8 @@ const backendUrl = (process.env.BACKEND_URL ?? "http://127.0.0.1:8000").replace(
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  // Keep the dev-only indicator away from the admin sidebar's collapse button (bottom-left).
+  devIndicators: { position: "bottom-right" },
   partialPrefetching: true,
   turbopack: {
     rules: {

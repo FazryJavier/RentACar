@@ -9,8 +9,11 @@ const password = `Demo${stamp}a`;
 const newPassword = `Baru${stamp}b`;
 
 async function logout(page: Page) {
-  await page.getByRole("button", { name: /^Akun / }).click();
-  await page.getByRole("menuitem", { name: "Keluar" }).click();
+  // The dev server may re-render while it compiles other routes, closing the menu: retry.
+  await expect(async () => {
+    await page.getByRole("button", { name: /^Akun / }).click();
+    await page.getByRole("menuitem", { name: "Keluar" }).click({ timeout: 3000 });
+  }).toPass({ timeout: 30_000 });
   await expect(page.getByRole("link", { name: "Masuk", exact: true })).toBeVisible();
 }
 

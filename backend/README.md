@@ -115,6 +115,22 @@ Sanctum SPA (cookie sesi + CSRF) di origin yang sama dengan frontend. Guard `web
 - Lokal `MAIL_MAILER=log`: tautan atur ulang ada di `storage/logs/laravel.log`.
 - Koneksi PostgreSQL memakai zona waktu sesi `UTC` (`config/database.php`), sehingga `timestamptz` selalu benar apa pun zona waktu server.
 
+## Admin panel: autentikasi, peran, cakupan cabang
+
+Guard `admin` (tabel `admins`) terpisah dari guard pelanggan `web`; password broker `admins`. Aturan login, batas percobaan, atur ulang, dan ubah kata sandi sama dengan pelanggan. Admin nonaktif → 403 `account_blocked`; admin terhapus → 401.
+
+| Endpoint (`/api/v1/admin`) | Keterangan |
+|---|---|
+| `POST /auth/login`, `POST /auth/logout` | Masuk/keluar admin |
+| `POST /auth/forgot-password`, `POST /auth/reset-password` | Tautan ke `{FRONTEND_URL}/admin/atur-ulang-kata-sandi` |
+| `GET /me` | `id`, `name`, `email`, `role`, `branch` (`{id,name}` untuk Staf), `menu` (kunci menu sesuai peran), `created_at` |
+| `PUT /me/password` | Ubah kata sandi (wajib kata sandi lama) |
+
+- **Peran:** batasi route khusus Super Admin dengan middleware `admin.role:super_admin` (Staf → 403 `forbidden`).
+- **Cakupan cabang:** model `Car` dan `Booking` memakai `BranchScoped`. Modul admin wajib memuat data lewat `Model::visibleTo($admin)` dan `Model::findVisibleOrFail($id, $admin)`: Staf hanya melihat cabangnya; data cabang lain → 404 yang sama dengan ID yang tidak ada. Scope ini eksplisit (bukan global) agar query publik tidak ikut terfilter.
+- **Menu:** `App\Enums\AdminMenu` menentukan menu per peran; UI hanya menyembunyikan, server tetap memeriksa.
+- Pelanggan dan admin bisa masuk bersamaan di satu browser (guard berbeda, satu cookie sesi).
+
 ## Seeding
 
 ```bash

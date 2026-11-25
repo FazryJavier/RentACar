@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\CarStatus;
 use App\Enums\FuelType;
 use App\Enums\Transmission;
+use App\Models\Concerns\BranchScoped;
 use Database\Factories\CarFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +16,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Car extends Model
 {
+    use BranchScoped;
+
     /** @use HasFactory<CarFactory> */
     use HasFactory;
 

@@ -43,12 +43,15 @@ async function fetchCurrentCustomer({
 }
 
 /** The signed-in customer (from `GET /api/v1/me`), or guest. */
-export function useCurrentCustomer(): CurrentCustomerState {
+export function useCurrentCustomer({
+  enabled = true,
+}: { enabled?: boolean } = {}): CurrentCustomerState {
   const query = useQuery({
     queryKey: CURRENT_CUSTOMER_KEY,
     queryFn: fetchCurrentCustomer,
     retry: false,
     staleTime: 5 * 60_000,
+    enabled,
   });
 
   if (query.isPending) {

@@ -5,6 +5,7 @@ import { useCallback } from "react";
 import { useToast } from "@/components/ui";
 import { useSetCurrentCustomer } from "@/hooks/useCurrentCustomer";
 import { apiPost } from "@/lib/api";
+import { markLogout } from "@/lib/logout-intent";
 
 /** Ends the session on the server, clears the cached customer and returns home. */
 export function useLogout(): () => Promise<void> {
@@ -18,6 +19,7 @@ export function useLogout(): () => Promise<void> {
     } catch {
       // Already signed out on the server (401/419): the local state is cleared either way.
     }
+    markLogout("/");
     setCustomer(null);
     toast.show({ tone: "info", title: "Anda sudah keluar" });
     router.push("/");

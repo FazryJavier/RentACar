@@ -24,7 +24,29 @@ describe("proxy", () => {
     expect(response.headers.get("x-middleware-next")).toBe("1");
   });
 
-  it("only runs on customer-only paths", () => {
-    expect(config.matcher).toEqual(["/pemesanan/:path*", "/profil/:path*", "/checkout/:path*"]);
+  it("sends admin panel visitors without a session to the admin login", () => {
+    const response = proxy(new NextRequest("http://localhost:3000/admin/profil"));
+
+    expect(response.headers.get("location")).toBe(
+      "http://localhost:3000/admin/masuk?next=%2Fadmin%2Fprofil",
+    );
+  });
+
+  it.each(["/admin/masuk", "/admin/lupa-kata-sandi", "/admin/atur-ulang-kata-sandi?token=x"])(
+    "lets the admin auth page %s through without a session",
+    (path) => {
+      const response = proxy(new NextRequest(`http://localhost:3000${path}`));
+
+      expect(response.headers.get("location")).toBeNull();
+    },
+  );
+
+  it("only runs on customer-only and admin paths", () => {
+    expect(config.matcher).toEqual([
+      "/pemesanan/:path*",
+      "/profil/:path*",
+      "/checkout/:path*",
+      "/admin/:path*",
+    ]);
   });
 });

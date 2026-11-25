@@ -37,7 +37,8 @@ return [
     |
     */
 
-    'guard' => ['web'],
+    // Guards whose sessions Sanctum's AuthenticateSession checks (password-hash per guard).
+    'guard' => ['web', 'admin'],
 
     /*
     |--------------------------------------------------------------------------

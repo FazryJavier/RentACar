@@ -5,17 +5,15 @@ import { useCallback, useSyncExternalStore } from "react";
 const listeners = new Set<() => void>();
 /** Fallback when sessionStorage is unavailable (private mode, blocked storage). */
 const memory = new Map<string, boolean>();
+const STORAGE = () => window.sessionStorage;
 
 function read(key: string): boolean {
   try {
-    const stored = window.sessionStorage.getItem(key);
-    if (stored !== null) {
-      return stored === "1";
-    }
+    return STORAGE().getItem(key) === "1";
   } catch {
-    // Storage blocked: fall through to the in-memory value.
+    // Storage blocked: use the value remembered for this page instead.
+    return memory.get(key) ?? false;
   }
-  return memory.get(key) ?? false;
 }
 
 function subscribe(onChange: () => void): () => void {
