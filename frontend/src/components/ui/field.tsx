@@ -45,6 +45,8 @@ export type FieldProps = {
   help?: ReactNode;
   error?: ReactNode;
   required?: boolean;
+  /** `on-dark` for fields placed on navy surfaces (footer). */
+  tone?: "default" | "on-dark";
   className?: string;
   children: ReactNode;
 };
@@ -53,7 +55,16 @@ export type FieldProps = {
  * Form field wrapper: label above, help text below, error with icon.
  * Controls inside receive `id`, `aria-invalid` and `aria-describedby` through context.
  */
-export function Field({ label, help, error, required = false, className, children }: FieldProps) {
+export function Field({
+  label,
+  help,
+  error,
+  required = false,
+  tone = "default",
+  className,
+  children,
+}: FieldProps) {
+  const onDark = tone === "on-dark";
   const baseId = useId();
   const controlId = `${baseId}-control`;
   const labelId = `${baseId}-label`;
@@ -66,10 +77,14 @@ export function Field({ label, help, error, required = false, className, childre
       value={{ controlId, labelId, invalid: Boolean(error), describedBy, required }}
     >
       <div className={cn("flex flex-col gap-1.5", className)}>
-        <label id={labelId} htmlFor={controlId} className="text-body-sm text-text font-medium">
+        <label
+          id={labelId}
+          htmlFor={controlId}
+          className={cn("text-body-sm font-medium", onDark ? "text-text-on-dark" : "text-text")}
+        >
           {label}
           {required ? (
-            <span aria-hidden="true" className="text-danger">
+            <span aria-hidden="true" className={onDark ? "text-danger-bg" : "text-danger"}>
               {" "}
               *
             </span>
@@ -77,13 +92,22 @@ export function Field({ label, help, error, required = false, className, childre
         </label>
         {children}
         {error ? (
-          <p id={errorId} className="text-body-sm text-danger flex items-center gap-1.5">
+          <p
+            id={errorId}
+            className={cn(
+              "text-body-sm flex items-center gap-1.5",
+              onDark ? "text-danger-bg" : "text-danger",
+            )}
+          >
             <CircleAlert aria-hidden="true" strokeWidth={1.75} className="size-4 shrink-0" />
             {error}
           </p>
         ) : null}
         {help ? (
-          <p id={helpId} className="text-caption text-text-subtle">
+          <p
+            id={helpId}
+            className={cn("text-caption", onDark ? "text-text-on-dark-muted" : "text-text-subtle")}
+          >
             {help}
           </p>
         ) : null}
