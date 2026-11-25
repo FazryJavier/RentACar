@@ -55,6 +55,20 @@ describe("Field", () => {
   });
 });
 
+describe("Field on dark surfaces", () => {
+  it("uses on-dark colours for label, help and error", () => {
+    render(
+      <Field label="Email" tone="on-dark" help="Bantuan" error="Salah">
+        <Input />
+      </Field>,
+    );
+
+    expect(screen.getByText("Email").className).toContain("text-text-on-dark");
+    expect(screen.getByText("Bantuan").className).toContain("text-text-on-dark-muted");
+    expect(screen.getByText("Salah").className).toContain("text-danger-bg");
+  });
+});
+
 describe("Select", () => {
   const options = [
     { value: "jakarta", label: "Jakarta" },

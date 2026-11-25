@@ -1,3 +1,5 @@
+"use client";
+
 import { cva, type VariantProps } from "class-variance-authority";
 import type { ComponentPropsWithRef, MouseEvent } from "react";
 import { cn } from "@/lib/cn";

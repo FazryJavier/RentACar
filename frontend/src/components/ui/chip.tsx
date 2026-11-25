@@ -1,3 +1,5 @@
+"use client";
+
 import { X } from "lucide-react";
 import type { ComponentPropsWithRef } from "react";
 import { cn } from "@/lib/cn";

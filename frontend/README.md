@@ -13,15 +13,27 @@ Website pelanggan (company profile, katalog, detail 3D, pemesanan) dan admin pan
 ## Struktur utama
 
 ```
-src/app/              Routing (App Router); /dev/ui = galeri komponen (hanya development)
+src/app/              Routing (App Router)
+  (public)/           Halaman publik; layout memakai SiteShell (banner demo, header, footer)
+  not-found.tsx       404 di dalam SiteShell; (public)/error.tsx dan global-error.tsx untuk 500
+  providers.tsx       QueryClient (TanStack Query) + ToastProvider untuk seluruh aplikasi
+  dev/ui/             Galeri komponen (hanya development)
+src/components/layout/ SiteShell, Header, MobileMenu, DemoBanner, Footer, NewsletterForm
 src/components/ui/    Komponen dasar (Button, Field, Select, DateRangePicker, Dialog, Toast, ...)
 src/styles/tokens.css Token warna, tipografi, spacing, radius, shadow, z-index, breakpoint, motion
-src/lib/              cn(), format Rupiah/WIB, helper tanggal WIB
-src/hooks/            useReducedMotion
+src/lib/              cn(), apiGet/ApiError, format Rupiah/WIB, helper tanggal WIB, navigasi
+src/hooks/            useReducedMotion, useCurrentCustomer, useScrolledPast, useSessionFlag
 tests/unit/           Vitest (termasuk penjaga nilai token)
 tests/e2e/            Playwright
 next.config.ts        Rewrite /api, /sanctum, /docs, /storage → Laravel (BACKEND_URL)
 ```
+
+## Layout & data
+
+- **Layout grup rute:** setiap grup halaman pelanggan (`(public)`, nanti `(auth)` dan `(customer)`) membungkus isinya dengan `SiteShell`. Admin memakai layout sendiri.
+- **API:** `apiGet<T>("/me")` memanggil `/api/v1/me` di origin yang sama (cookie Sanctum), mengembalikan `data` dari envelope, dan melempar `ApiError` (`status`, `message`, `errors`) bila gagal.
+- **Sesi pelanggan:** `useCurrentCustomer()` → `{ status: "loading" | "guest" | "signed-in", customer }`. 401/404 dianggap tamu; header menampilkan "Masuk" atau nama pelanggan.
+- **Banner demo** disembunyikan per sesi browser (`sessionStorage`), tetap berfungsi jika storage diblokir.
 
 ## Design tokens & komponen
 
