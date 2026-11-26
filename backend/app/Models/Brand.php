@@ -14,9 +14,11 @@ class Brand extends Model
 
     protected $fillable = ['name', 'slug', 'logo_path'];
 
+    protected $attributes = ['version' => 1];
+
     protected function casts(): array
     {
-        return ['created_at' => 'immutable_datetime', 'updated_at' => 'immutable_datetime'];
+        return ['version' => 'integer', 'created_at' => 'immutable_datetime', 'updated_at' => 'immutable_datetime'];
     }
 
     /** @return HasMany<Car, $this> */

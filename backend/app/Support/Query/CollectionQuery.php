@@ -69,6 +69,12 @@ final readonly class CollectionQuery
             $query->orderBy($this->sortColumn, $this->sortDirection);
         }
 
+        foreach ($this->spec->tieBreakers as $column) {
+            if ($column !== $this->sortColumn) {
+                $query->orderBy($column);
+            }
+        }
+
         return $query->paginate($this->perPage, ['*'], 'page', $this->page);
     }
 

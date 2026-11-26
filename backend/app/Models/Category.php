@@ -14,9 +14,11 @@ class Category extends Model
 
     protected $fillable = ['name', 'slug', 'description', 'sort_order'];
 
+    protected $attributes = ['version' => 1];
+
     protected function casts(): array
     {
-        return ['sort_order' => 'integer', 'created_at' => 'immutable_datetime', 'updated_at' => 'immutable_datetime'];
+        return ['sort_order' => 'integer', 'version' => 'integer', 'created_at' => 'immutable_datetime', 'updated_at' => 'immutable_datetime'];
     }
 
     /** @return HasMany<Car, $this> */
