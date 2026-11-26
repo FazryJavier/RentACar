@@ -14,6 +14,27 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $slug
+ * @property int $brand_id
+ * @property int $category_id
+ * @property int $branch_id
+ * @property string $model_name
+ * @property int $year
+ * @property string $plate_number
+ * @property string $color
+ * @property Transmission $transmission
+ * @property FuelType $fuel_type
+ * @property int $seats
+ * @property int|null $luggage_capacity
+ * @property string|null $description
+ * @property list<string> $features
+ * @property CarStatus $status
+ * @property int $daily_price
+ * @property int $deposit
+ * @property int $version
+ */
 class Car extends Model
 {
     use BranchScoped;

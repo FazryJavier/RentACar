@@ -12,7 +12,7 @@ class CarPhoto extends Model
     /** @use HasFactory<CarPhotoFactory> */
     use HasFactory;
 
-    protected $fillable = ['car_id', 'path', 'variants', 'alt_text', 'sort_order'];
+    protected $fillable = ['car_id', 'path', 'variants', 'alt_text', 'sort_order', 'processed_at'];
 
     protected $attributes = ['variants' => '{}'];
 
@@ -21,9 +21,15 @@ class CarPhoto extends Model
         return [
             'variants' => 'array',
             'sort_order' => 'integer',
+            'processed_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];
+    }
+
+    public function isProcessed(): bool
+    {
+        return $this->processed_at !== null;
     }
 
     /** @return BelongsTo<Car, $this> */

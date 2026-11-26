@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Brand;
-use Illuminate\Cookie\CookieValuePrefix;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -20,23 +19,7 @@ beforeEach(function () {
 
 function uploadLogo(TestCase $test, Browser $browser, int $brandId, UploadedFile $file)
 {
-    // Multipart through the regular test client (the Browser helper sends JSON).
-    $cookies = (new ReflectionProperty($browser, 'cookies'))->getValue($browser);
-    $encrypter = app('encrypter');
-    $encrypted = [];
-    foreach ($cookies as $name => $value) {
-        $encrypted[$name] = $encrypter->encrypt(CookieValuePrefix::create($name, $encrypter->getKey()).$value, false);
-    }
-    app('auth')->forgetGuards();
-    app('session')->driver()->flush();
-
-    return $test->call('POST', "/api/v1/admin/brands/{$brandId}/logo", [], $encrypted, ['logo' => $file], [
-        'HTTP_ACCEPT' => 'application/json',
-        'HTTP_ORIGIN' => 'http://localhost:3000',
-        'HTTP_REFERER' => 'http://localhost:3000/',
-        'HTTP_SEC_FETCH_SITE' => 'same-origin',
-        'REMOTE_ADDR' => '203.0.113.10',
-    ]);
+    return $browser->upload("/api/v1/admin/brands/{$brandId}/logo", ['logo' => $file]);
 }
 
 /**

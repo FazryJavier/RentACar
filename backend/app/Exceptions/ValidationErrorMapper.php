@@ -38,6 +38,7 @@ final class ValidationErrorMapper
         'Email', 'Regex', 'NotRegex', 'Date', 'DateFormat', 'DateEquals', 'Uuid', 'Ulid', 'Url',
         'In', 'NotIn', 'String', 'Integer', 'Numeric', 'Decimal', 'Boolean', 'Array', 'List', 'Json',
         'Digits', 'DigitsBetween', 'Alpha', 'AlphaDash', 'AlphaNum', 'Ip', 'Ipv4', 'Ipv6', 'Timezone', 'Enum',
+        'PlateNumberRule',
     ];
 
     private const FILE_TYPE_RULES = ['Mimes', 'Mimetypes', 'File', 'Image', 'Extensions'];

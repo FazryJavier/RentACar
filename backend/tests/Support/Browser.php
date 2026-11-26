@@ -73,6 +73,26 @@ final class Browser
         return $response;
     }
 
+    /**
+     * POST `multipart/form-data` (file uploads) with this browser's session.
+     *
+     * @param  array<string, mixed>  $files
+     * @param  array<string, mixed>  $data
+     */
+    public function upload(string $uri, array $files, array $data = []): TestResponse
+    {
+        app('auth')->forgetGuards();
+        app('session')->driver()->flush();
+
+        return $this->test->call('POST', $uri, $data, $this->encryptedCookies(), $files, [
+            'HTTP_ACCEPT' => 'application/json',
+            'HTTP_ORIGIN' => self::ORIGIN,
+            'HTTP_REFERER' => self::ORIGIN.'/',
+            'HTTP_SEC_FETCH_SITE' => 'same-origin',
+            'REMOTE_ADDR' => '203.0.113.10',
+        ]);
+    }
+
     public function get(string $uri): TestResponse
     {
         return $this->json('GET', $uri);

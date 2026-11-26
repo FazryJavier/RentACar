@@ -22,9 +22,12 @@ test("admin logs in, uses the sidebar, collapses it and logs out", async ({ page
   await expect(page).toHaveURL(/\/admin\/profil$/);
 
   const nav = page.getByRole("navigation", { name: "Menu admin" });
-  await nav.getByRole("link", { name: "Mobil" }).click();
+  await nav.getByRole("link", { name: "Pembayaran" }).click();
   await expect(page.getByRole("heading", { name: "Segera hadir" })).toBeVisible();
-  await expect(nav.getByRole("link", { name: "Mobil" })).toHaveAttribute("aria-current", "page");
+  await expect(nav.getByRole("link", { name: "Pembayaran" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
 
   await page.getByRole("button", { name: "Ciutkan sidebar" }).click();
   await expect(page.locator("aside")).toHaveCSS("width", "72px");

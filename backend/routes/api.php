@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\V1\Admin\Auth\ForgotPasswordController as AdminForg
 use App\Http\Controllers\Api\V1\Admin\Auth\LoginController as AdminLoginController;
 use App\Http\Controllers\Api\V1\Admin\Auth\LogoutController as AdminLogoutController;
 use App\Http\Controllers\Api\V1\Admin\Auth\ResetPasswordController as AdminResetPasswordController;
+use App\Http\Controllers\Api\V1\Admin\Fleet\CarController;
+use App\Http\Controllers\Api\V1\Admin\Fleet\CarPhotoController;
 use App\Http\Controllers\Api\V1\Admin\MasterData\BranchController;
 use App\Http\Controllers\Api\V1\Admin\MasterData\BrandController;
 use App\Http\Controllers\Api\V1\Admin\MasterData\BrandLogoController;
@@ -84,6 +86,16 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
                 Route::patch('branches/{branch}', [BranchController::class, 'update'])->name('branches.update');
                 Route::delete('branches/{branch}', [BranchController::class, 'destroy'])->name('branches.destroy');
             });
+
+            // Fleet: every admin; Staf only see and change cars of their branch (404 otherwise).
+            Route::get('cars', [CarController::class, 'index'])->name('cars.index');
+            Route::post('cars', [CarController::class, 'store'])->name('cars.store');
+            Route::get('cars/{car}', [CarController::class, 'show'])->whereNumber('car')->name('cars.show');
+            Route::patch('cars/{car}', [CarController::class, 'update'])->whereNumber('car')->name('cars.update');
+            Route::delete('cars/{car}', [CarController::class, 'destroy'])->whereNumber('car')->name('cars.destroy');
+            Route::post('cars/{car}/photos', [CarPhotoController::class, 'store'])->whereNumber('car')->name('cars.photos.store');
+            Route::patch('cars/{car}/photos/order', [CarPhotoController::class, 'order'])->whereNumber('car')->name('cars.photos.order');
+            Route::delete('cars/{car}/photos/{photo}', [CarPhotoController::class, 'destroy'])->whereNumber(['car', 'photo'])->name('cars.photos.destroy');
         });
     });
 });

@@ -28,6 +28,8 @@ final class ErrorCatalog
 
     public const RESOURCE_IN_USE = 'resource_in_use';
 
+    public const CAR_HAS_ACTIVE_BOOKINGS = 'car_has_active_bookings';
+
     public const PAYLOAD_TOO_LARGE = 'payload_too_large';
 
     public const UNSUPPORTED_MEDIA_TYPE = 'unsupported_media_type';
@@ -56,6 +58,7 @@ final class ErrorCatalog
         self::CONFLICT => 'Permintaan bertentangan dengan kondisi data saat ini.',
         self::VERSION_CONFLICT => 'Data sudah diubah admin lain. Muat ulang lalu coba lagi.',
         self::RESOURCE_IN_USE => 'Data masih dipakai sehingga tidak bisa dihapus.',
+        self::CAR_HAS_ACTIVE_BOOKINGS => 'Mobil masih punya pemesanan aktif.',
         self::PAYLOAD_TOO_LARGE => 'Ukuran data yang dikirim terlalu besar.',
         self::UNSUPPORTED_MEDIA_TYPE => 'Tipe konten permintaan tidak didukung.',
         self::CSRF_TOKEN_MISMATCH => 'Sesi keamanan kedaluwarsa. Muat ulang halaman lalu coba lagi.',

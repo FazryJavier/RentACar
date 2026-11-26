@@ -14,20 +14,27 @@ export type FileDropzoneProps = {
   maxSize: number;
   /** Human label of the allowed types, e.g. "JPG atau PNG". */
   typeLabel: string;
-  onFileChange: (file: File | null) => void;
+  /** Single-file mode: the chosen file, or null when removed. */
+  onFileChange?: (file: File | null) => void;
+  /** Accept several files at once; valid files are passed to `onFilesChange` and the area resets. */
+  multiple?: boolean;
+  onFilesChange?: (files: File[]) => void;
   disabled?: boolean;
   className?: string;
 };
 
 /**
- * Single-file upload area. Type and size checks here are for user
- * experience only; the server always validates the content and size again.
+ * Upload area for one file (with preview) or, with `multiple`, several files at once.
+ * Type and size checks here are for user experience only; the server always validates
+ * the content and size again.
  */
 export function FileDropzone({
   accept,
   maxSize,
   typeLabel,
   onFileChange,
+  multiple = false,
+  onFilesChange,
   disabled = false,
   className,
 }: FileDropzoneProps) {
@@ -50,16 +57,39 @@ export function FileDropzone({
     };
   }, [preview]);
 
+  function problemOf(candidate: File): string | null {
+    if (!accept.includes(candidate.type)) {
+      return `Tipe file harus ${typeLabel}`;
+    }
+    if (candidate.size > maxSize) {
+      return `Ukuran file maksimal ${formatFileSize(maxSize)}`;
+    }
+    return null;
+  }
+
+  function chooseMany(candidates: FileList | null | undefined) {
+    const list = Array.from(candidates ?? []);
+    if (list.length === 0) {
+      return;
+    }
+    const rejected = list.find((candidate) => problemOf(candidate) !== null);
+    setError(rejected ? `${rejected.name}: ${problemOf(rejected)}` : null);
+    const valid = list.filter((candidate) => problemOf(candidate) === null);
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+    if (valid.length > 0) {
+      onFilesChange?.(valid);
+    }
+  }
+
   function choose(candidate: File | undefined) {
     if (!candidate) {
       return;
     }
-    if (!accept.includes(candidate.type)) {
-      setError(`Tipe file harus ${typeLabel}`);
-      return;
-    }
-    if (candidate.size > maxSize) {
-      setError(`Ukuran file maksimal ${formatFileSize(maxSize)}`);
+    const problem = problemOf(candidate);
+    if (problem) {
+      setError(problem);
       return;
     }
     setError(null);
@@ -69,7 +99,7 @@ export function FileDropzone({
         ? URL.createObjectURL(candidate)
         : null,
     );
-    onFileChange(candidate);
+    onFileChange?.(candidate);
   }
 
   function remove() {
@@ -79,7 +109,7 @@ export function FileDropzone({
     if (inputRef.current) {
       inputRef.current.value = "";
     }
-    onFileChange(null);
+    onFileChange?.(null);
   }
 
   function openChooser() {
@@ -99,7 +129,11 @@ export function FileDropzone({
     event.preventDefault();
     setDragging(false);
     if (!disabled) {
-      choose(event.dataTransfer.files[0]);
+      if (multiple) {
+        chooseMany(event.dataTransfer.files);
+      } else {
+        choose(event.dataTransfer.files[0]);
+      }
     }
   }
 
@@ -178,8 +212,11 @@ export function FileDropzone({
         aria-hidden="true"
         className="sr-only"
         accept={accept.join(",")}
+        multiple={multiple}
         disabled={disabled}
-        onChange={(event) => choose(event.target.files?.[0])}
+        onChange={(event) =>
+          multiple ? chooseMany(event.target.files) : choose(event.target.files?.[0])
+        }
         data-testid="file-dropzone-input"
       />
       {error ? (
