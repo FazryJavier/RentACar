@@ -23,7 +23,7 @@ use Illuminate\Validation\ValidationException;
 
 final class CarController extends AdminController
 {
-    private const RELATIONS = ['brand', 'category', 'branch', 'photos'];
+    private const RELATIONS = ['brand', 'category', 'branch', 'photos', 'model3d'];
 
     public function __construct(
         private readonly Slugger $slugger,

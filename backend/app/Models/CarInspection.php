@@ -2,11 +2,19 @@
 
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
 use Database\Factories\CarInspectionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $car_id
+ * @property CarbonImmutable $inspected_at
+ * @property int $odometer_km
+ * @property string|null $notes
+ */
 class CarInspection extends Model
 {
     /** @use HasFactory<CarInspectionFactory> */

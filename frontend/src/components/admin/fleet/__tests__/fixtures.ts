@@ -54,6 +54,8 @@ export const carFixture: Car = {
   description: null,
   features: ["AC"],
   has_3d: false,
+  model_3d: null,
+  last_inspected_at: null,
   photos: [],
   version: 2,
   created_at: "2026-11-27T01:00:00Z",

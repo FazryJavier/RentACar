@@ -9,6 +9,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * The glTF model of a car (one per car).
+ *
+ * @property int $id
+ * @property int $car_id
+ * @property string $file_path
+ * @property int $file_size
+ * @property string|null $poster_path
+ * @property array<string, mixed> $camera
+ * @property string $source_name
+ * @property string|null $source_url
+ * @property string $license
+ * @property bool $is_illustrative
+ * @property int $model_version
  */
 class CarModel3d extends Model
 {

@@ -4,7 +4,10 @@ use App\Http\Controllers\Api\V1\Admin\Auth\ForgotPasswordController as AdminForg
 use App\Http\Controllers\Api\V1\Admin\Auth\LoginController as AdminLoginController;
 use App\Http\Controllers\Api\V1\Admin\Auth\LogoutController as AdminLogoutController;
 use App\Http\Controllers\Api\V1\Admin\Auth\ResetPasswordController as AdminResetPasswordController;
+use App\Http\Controllers\Api\V1\Admin\Fleet\CarConditionController;
 use App\Http\Controllers\Api\V1\Admin\Fleet\CarController;
+use App\Http\Controllers\Api\V1\Admin\Fleet\CarInspectionController;
+use App\Http\Controllers\Api\V1\Admin\Fleet\CarModelController;
 use App\Http\Controllers\Api\V1\Admin\Fleet\CarPhotoController;
 use App\Http\Controllers\Api\V1\Admin\MasterData\BranchController;
 use App\Http\Controllers\Api\V1\Admin\MasterData\BrandController;
@@ -96,6 +99,20 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             Route::post('cars/{car}/photos', [CarPhotoController::class, 'store'])->whereNumber('car')->name('cars.photos.store');
             Route::patch('cars/{car}/photos/order', [CarPhotoController::class, 'order'])->whereNumber('car')->name('cars.photos.order');
             Route::delete('cars/{car}/photos/{photo}', [CarPhotoController::class, 'destroy'])->whereNumber(['car', 'photo'])->name('cars.photos.destroy');
+
+            // 3D model, condition markers and inspections (same branch rules as cars).
+            Route::post('cars/{car}/model', [CarModelController::class, 'store'])->whereNumber('car')->name('cars.model.store');
+            Route::patch('cars/{car}/model', [CarModelController::class, 'update'])->whereNumber('car')->name('cars.model.update');
+            Route::delete('cars/{car}/model', [CarModelController::class, 'destroy'])->whereNumber('car')->name('cars.model.destroy');
+            Route::post('cars/{car}/model/poster', [CarModelController::class, 'poster'])->whereNumber('car')->name('cars.model.poster');
+            Route::get('cars/{car}/conditions', [CarConditionController::class, 'index'])->whereNumber('car')->name('cars.conditions.index');
+            Route::post('cars/{car}/conditions', [CarConditionController::class, 'store'])->whereNumber('car')->name('cars.conditions.store');
+            Route::patch('cars/{car}/conditions/{condition}', [CarConditionController::class, 'update'])->whereNumber(['car', 'condition'])->name('cars.conditions.update');
+            Route::delete('cars/{car}/conditions/{condition}', [CarConditionController::class, 'destroy'])->whereNumber(['car', 'condition'])->name('cars.conditions.destroy');
+            Route::post('cars/{car}/conditions/{condition}/photos', [CarConditionController::class, 'storePhoto'])->whereNumber(['car', 'condition'])->name('cars.conditions.photos.store');
+            Route::delete('cars/{car}/conditions/{condition}/photos/{photo}', [CarConditionController::class, 'destroyPhoto'])->whereNumber(['car', 'condition', 'photo'])->name('cars.conditions.photos.destroy');
+            Route::get('cars/{car}/inspections', [CarInspectionController::class, 'index'])->whereNumber('car')->name('cars.inspections.index');
+            Route::post('cars/{car}/inspections', [CarInspectionController::class, 'store'])->whereNumber('car')->name('cars.inspections.store');
         });
     });
 });

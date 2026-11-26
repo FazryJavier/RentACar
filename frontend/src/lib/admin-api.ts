@@ -123,6 +123,48 @@ export type CarPhoto = {
   urls: Record<"480" | "960" | "1440", string> | null;
 };
 
+export type Vec3 = [number, number, number];
+
+export type CarModel3d = {
+  url: string;
+  poster_url: string | null;
+  camera: { position: Vec3; target: Vec3 } | null;
+  file_size: number;
+  source_name: string;
+  source_url: string | null;
+  license: string;
+  is_illustrative: boolean;
+  model_version: number;
+  updated_at: string | null;
+};
+
+export type ConditionArea = "front" | "rear" | "left" | "right" | "roof" | "interior" | "wheel";
+export type ConditionSeverity = "minor" | "moderate" | "major";
+
+export type CarCondition = {
+  id: number;
+  number: number;
+  area: ConditionArea;
+  severity: ConditionSeverity;
+  description: string;
+  position: Vec3 | null;
+  normal: Vec3 | null;
+  model_version: number | null;
+  needs_reposition: boolean;
+  inspected_on: string;
+  is_resolved: boolean;
+  resolved_at: string | null;
+  photos: { id: number; url: string }[];
+};
+
+export type CarInspection = {
+  id: number;
+  inspected_at: string;
+  odometer_km: number;
+  notes: string | null;
+  admin: { id: number; name: string } | null;
+};
+
 export type Car = {
   id: number;
   slug: string;
@@ -143,6 +185,8 @@ export type Car = {
   description: string | null;
   features: string[];
   has_3d: boolean;
+  model_3d: CarModel3d | null;
+  last_inspected_at: string | null;
   photos: CarPhoto[];
   version: number;
   created_at: string;
@@ -195,6 +239,74 @@ export const carPhotosApi = {
     apiPatch<CarPhoto[]>(`/admin/cars/${carId}/photos/order`, { photo_ids: photoIds }),
   remove: (carId: number, photoId: number): Promise<null> =>
     apiDelete<null>(`/admin/cars/${carId}/photos/${photoId}`),
+};
+
+export type ModelCredit = {
+  source_name: string;
+  source_url: string | null;
+  license: string;
+  is_illustrative: boolean;
+};
+
+export const carModelApi = {
+  upload: (carId: number, file: File, credit: ModelCredit): Promise<CarModel3d> => {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("source_name", credit.source_name);
+    form.append("license", credit.license);
+    form.append("is_illustrative", credit.is_illustrative ? "1" : "0");
+    if (credit.source_url) {
+      form.append("source_url", credit.source_url);
+    }
+    return apiUpload<CarModel3d>(`/admin/cars/${carId}/model`, form);
+  },
+  update: (
+    carId: number,
+    body: Partial<ModelCredit> & { camera?: { position: Vec3; target: Vec3 } },
+  ): Promise<CarModel3d> => apiPatch<CarModel3d>(`/admin/cars/${carId}/model`, body),
+  poster: (carId: number, poster: Blob): Promise<CarModel3d> => {
+    const form = new FormData();
+    form.append("poster", poster, "poster.webp");
+    return apiUpload<CarModel3d>(`/admin/cars/${carId}/model/poster`, form);
+  },
+  remove: (carId: number): Promise<null> => apiDelete<null>(`/admin/cars/${carId}/model`),
+};
+
+export type ConditionBody = {
+  area: ConditionArea;
+  severity: ConditionSeverity;
+  description: string;
+  inspected_on: string;
+  position?: Vec3;
+  normal?: Vec3;
+  is_resolved?: boolean;
+};
+
+export const conditionsApi = {
+  list: (carId: number, signal?: AbortSignal): Promise<CarCondition[]> =>
+    apiGet<CarCondition[]>(`/admin/cars/${carId}/conditions`, { signal }),
+  create: (carId: number, body: ConditionBody): Promise<CarCondition> =>
+    apiPost<CarCondition>(`/admin/cars/${carId}/conditions`, body),
+  update: (carId: number, id: number, body: Partial<ConditionBody>): Promise<CarCondition> =>
+    apiPatch<CarCondition>(`/admin/cars/${carId}/conditions/${id}`, body),
+  remove: (carId: number, id: number): Promise<null> =>
+    apiDelete<null>(`/admin/cars/${carId}/conditions/${id}`),
+  uploadPhoto: (carId: number, id: number, file: File): Promise<CarCondition> => {
+    const form = new FormData();
+    form.append("photo", file);
+    return apiUpload<CarCondition>(`/admin/cars/${carId}/conditions/${id}/photos`, form);
+  },
+  removePhoto: (carId: number, id: number, photoId: number): Promise<CarCondition> =>
+    apiDelete<CarCondition>(`/admin/cars/${carId}/conditions/${id}/photos/${photoId}`),
+};
+
+export const inspectionsApi = {
+  list: (carId: number, signal?: AbortSignal): Promise<CarInspection[]> =>
+    apiGet<CarInspection[]>(`/admin/cars/${carId}/inspections`, { signal }),
+  create: (
+    carId: number,
+    body: { inspected_at: string; odometer_km: number; notes: string | null },
+  ): Promise<CarInspection> => apiPost<CarInspection>(`/admin/cars/${carId}/inspections`, body),
 };
 
 /** A booking that blocks a car change (409 `car_has_active_bookings`). */

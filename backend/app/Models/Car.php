@@ -6,6 +6,7 @@ use App\Enums\CarStatus;
 use App\Enums\FuelType;
 use App\Enums\Transmission;
 use App\Models\Concerns\BranchScoped;
+use Carbon\CarbonImmutable;
 use Database\Factories\CarFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -34,6 +35,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $daily_price
  * @property int $deposit
  * @property int $version
+ * @property CarbonImmutable|null $last_inspected_at
+ * @property int $odometer_km
  */
 class Car extends Model
 {
