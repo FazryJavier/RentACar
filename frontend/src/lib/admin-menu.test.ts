@@ -21,11 +21,12 @@ describe("admin menu", () => {
 
   it("lists placeholder sections for every module", () => {
     expect(PLACEHOLDER_SECTIONS).toMatchObject({
-      mobil: "cars",
+      pelanggan: "customers",
       "log-audit": "audit_logs",
     });
     expect(Object.keys(PLACEHOLDER_SECTIONS)).not.toContain("cabang");
     expect(Object.keys(PLACEHOLDER_SECTIONS)).not.toContain("merek");
+    expect(Object.keys(PLACEHOLDER_SECTIONS)).not.toContain("mobil");
     expect(Object.keys(PLACEHOLDER_SECTIONS)).not.toContain("");
   });
 });

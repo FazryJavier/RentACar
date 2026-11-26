@@ -90,8 +90,119 @@ export const brandsApi = {
 export const categoriesApi = adminResource<Category, CategoryBody>("categories");
 export const branchesApi = adminResource<Branch, BranchBody>("branches");
 
+export type CarStatus = "active" | "maintenance" | "inactive";
+export type Transmission = "manual" | "automatic";
+export type FuelType = "gasoline" | "diesel" | "hybrid" | "electric";
+
+type Ref = { id: number; name: string };
+
+export type CarListItem = {
+  id: number;
+  slug: string;
+  model_name: string;
+  year: number;
+  plate_number: string;
+  color: string;
+  status: CarStatus;
+  daily_price: number;
+  brand: Ref;
+  category: Ref;
+  branch: Ref;
+  thumbnail_url: string | null;
+  photos_count: number;
+  has_3d: boolean;
+};
+
+export type CarPhoto = {
+  id: number;
+  sort_order: number;
+  is_main: boolean;
+  alt_text: string;
+  processing: boolean;
+  /** WebP URLs by width once processed. */
+  urls: Record<"480" | "960" | "1440", string> | null;
+};
+
+export type Car = {
+  id: number;
+  slug: string;
+  brand: Ref;
+  category: Ref;
+  branch: Ref;
+  model_name: string;
+  year: number;
+  plate_number: string;
+  color: string;
+  transmission: Transmission;
+  fuel_type: FuelType;
+  seats: number;
+  luggage_capacity: number | null;
+  daily_price: number;
+  deposit: number;
+  status: CarStatus;
+  description: string | null;
+  features: string[];
+  has_3d: boolean;
+  photos: CarPhoto[];
+  version: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CarBody = {
+  brand_id: number;
+  category_id: number;
+  branch_id?: number;
+  model_name: string;
+  year: number;
+  plate_number: string;
+  color: string;
+  transmission: Transmission;
+  fuel_type: FuelType;
+  seats: number;
+  luggage_capacity: number | null;
+  daily_price: number;
+  deposit: number;
+  status: CarStatus;
+  description: string | null;
+  features: string[];
+};
+
+export type CarUpdateBody = Partial<CarBody> & {
+  version: number;
+  force_cancel_bookings?: boolean;
+  cancel_reason?: string;
+};
+
+export const carsApi = {
+  list: (params: ListParams, signal?: AbortSignal): Promise<Page<CarListItem>> =>
+    apiGetPage<CarListItem>(`/admin/cars${query(params)}`, { signal }),
+  get: (id: number, signal?: AbortSignal): Promise<Car> =>
+    apiGet<Car>(`/admin/cars/${id}`, { signal }),
+  create: (body: CarBody): Promise<Car> => apiPost<Car>("/admin/cars", body),
+  update: (id: number, body: CarUpdateBody): Promise<Car> =>
+    apiPatch<Car>(`/admin/cars/${id}`, body),
+  remove: (id: number): Promise<null> => apiDelete<null>(`/admin/cars/${id}`),
+};
+
+export const carPhotosApi = {
+  upload: (carId: number, file: File): Promise<CarPhoto> => {
+    const form = new FormData();
+    form.append("photo", file);
+    return apiUpload<CarPhoto>(`/admin/cars/${carId}/photos`, form);
+  },
+  reorder: (carId: number, photoIds: number[]): Promise<CarPhoto[]> =>
+    apiPatch<CarPhoto[]>(`/admin/cars/${carId}/photos/order`, { photo_ids: photoIds }),
+  remove: (carId: number, photoId: number): Promise<null> =>
+    apiDelete<null>(`/admin/cars/${carId}/photos/${photoId}`),
+};
+
+/** A booking that blocks a car change (409 `car_has_active_bookings`). */
+export type BlockingBooking = { code: string; status: string; pickup_at: string };
+
 export type AdminErrorKind =
   | { kind: "fields"; fields: Record<string, string> }
+  | { kind: "active-bookings"; message: string; bookings: BlockingBooking[] }
   | { kind: "conflict"; message: string }
   | { kind: "in-use"; message: string }
   | { kind: "forbidden"; message: string }
@@ -110,6 +221,10 @@ export function mapAdminError(error: unknown): AdminErrorKind {
   const code = error.errors[0]?.code;
   if (error.status === 409 && code === "version_conflict") {
     return { kind: "conflict", message: CONFLICT_MESSAGE };
+  }
+  if (error.status === 409 && code === "car_has_active_bookings") {
+    const details = error.errors[0]?.details as { bookings?: BlockingBooking[] } | undefined;
+    return { kind: "active-bookings", message: error.message, bookings: details?.bookings ?? [] };
   }
   if (error.status === 409 && code === "resource_in_use") {
     return { kind: "in-use", message: error.message };

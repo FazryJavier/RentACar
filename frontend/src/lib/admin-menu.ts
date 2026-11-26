@@ -109,7 +109,7 @@ export function activeMenuItem(pathname: string): AdminMenuItem | undefined {
 }
 
 /** Modules that already have their own pages. */
-const BUILT_SECTIONS = ["brands", "categories", "branches"];
+const BUILT_SECTIONS = ["cars", "brands", "categories", "branches"];
 
 /** Module sections that exist as placeholder pages until their stories ship. */
 export const PLACEHOLDER_SECTIONS: Record<string, string> = Object.fromEntries(

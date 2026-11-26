@@ -102,3 +102,59 @@ describe("FileDropzone", () => {
     expect(zone.className).not.toContain("bg-accent-wash");
   });
 });
+
+describe("FileDropzone multiple", () => {
+  it("passes every valid file and reports the first rejected one", async () => {
+    const onFilesChange = vi.fn();
+    render(
+      <Field label="Foto">
+        <FileDropzone
+          multiple
+          accept={["image/jpeg"]}
+          maxSize={10}
+          typeLabel="JPG"
+          onFilesChange={onFilesChange}
+        />
+      </Field>,
+    );
+    const input = screen.getByTestId("file-dropzone-input");
+    expect(input).toHaveAttribute("multiple");
+
+    await userEvent
+      .setup({ applyAccept: false })
+      .upload(input, [
+        new File(["a"], "a.jpg", { type: "image/jpeg" }),
+        new File(["b"], "b.png", { type: "image/png" }),
+        new File(["c"], "c.jpg", { type: "image/jpeg" }),
+      ]);
+
+    expect(onFilesChange).toHaveBeenCalledWith([
+      expect.objectContaining({ name: "a.jpg" }),
+      expect.objectContaining({ name: "c.jpg" }),
+    ]);
+    expect(screen.getByRole("alert")).toHaveTextContent("b.png: Tipe file harus JPG");
+    // The area stays ready for the next batch (no single-file preview).
+    expect(screen.getByText("Seret file ke sini atau pilih file")).toBeInTheDocument();
+  });
+
+  it("accepts dropped files", () => {
+    const onFilesChange = vi.fn();
+    render(
+      <Field label="Foto">
+        <FileDropzone
+          multiple
+          accept={["image/jpeg"]}
+          maxSize={10}
+          typeLabel="JPG"
+          onFilesChange={onFilesChange}
+        />
+      </Field>,
+    );
+
+    fireEvent.drop(screen.getByRole("button", { name: /Foto/ }), {
+      dataTransfer: { files: [new File(["a"], "a.jpg", { type: "image/jpeg" })] },
+    });
+
+    expect(onFilesChange).toHaveBeenCalledWith([expect.objectContaining({ name: "a.jpg" })]);
+  });
+});

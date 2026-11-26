@@ -20,6 +20,7 @@ class CarPhotoFactory extends Factory
             'variants' => [],
             'alt_text' => 'Foto mobil tampak depan samping',
             'sort_order' => 0,
+            'processed_at' => now(),
         ];
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\BookingStatus;
 use App\Models\Concerns\BranchScoped;
+use Carbon\CarbonImmutable;
 use Database\Factories\BookingFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +14,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * A rental booking with snapshots of price and renter data taken at creation time.
  * Business rules (availability, pricing, status transitions) live in app/Domain.
+ *
+ * @property int $id
+ * @property string $code
+ * @property int $car_id
+ * @property BookingStatus $status
+ * @property CarbonImmutable $pickup_at
+ * @property CarbonImmutable $blocked_until
+ * @property CarbonImmutable|null $payment_deadline
+ * @property string|null $status_reason
+ * @property int $version
  */
 class Booking extends Model
 {

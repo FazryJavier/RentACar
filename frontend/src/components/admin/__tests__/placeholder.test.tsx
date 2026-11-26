@@ -17,12 +17,12 @@ vi.mock("next/navigation", async () => {
 
 describe("admin section placeholder", () => {
   it("renders 'Segera hadir' for a known module to a signed-in admin", async () => {
-    nav.reset("/admin/mobil");
+    nav.reset("/admin/pembayaran");
     mockApi({ "GET /admin/me": { status: 200, body: ok(staffFixture) } });
-    renderWithProviders(await Page({ params: Promise.resolve({ section: ["mobil"] }) }));
+    renderWithProviders(await Page({ params: Promise.resolve({ section: ["pembayaran"] }) }));
 
     expect(await screen.findByRole("heading", { name: "Segera hadir" })).toBeInTheDocument();
-    expect(screen.getByText(/Modul Mobil sedang dibangun/)).toBeInTheDocument();
+    expect(screen.getByText(/Modul Pembayaran sedang dibangun/)).toBeInTheDocument();
   });
 
   it("is a 404 for unknown sections", async () => {

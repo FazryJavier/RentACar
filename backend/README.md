@@ -145,8 +145,26 @@ Guard `admin` (tabel `admins`) terpisah dari guard pelanggan `web`; password bro
 
 - **Kunci optimistis:** setiap respons berisi `version`. `PATCH` wajib mengirim `version` terakhir; bila data sudah diubah admin lain → 409 `version_conflict` (field `version`). Muat ulang lalu kirim lagi.
 - **Data yang masih dipakai:** `DELETE` → 409 `resource_in_use` dengan `errors[0].details.usage` (mis. `{"cars": 3}`) dan pesan seperti "Merek masih dipakai 3 mobil."
-- **Logo:** disimpan di disk `public` dengan nama acak (`brands/<uuid>.<ext>`); file lama dihapus saat diganti/dihapus. SVG dibersihkan dengan allowlist elemen/atribut (`App\Support\Svg\SvgSanitizer`: tanpa skrip, event handler, `foreignObject`, DOCTYPE/entity, atau URL eksternal). Jalankan `php artisan storage:link` sekali agar `/storage/...` bisa diakses.
+- **Logo:** disimpan di disk `public` dengan nama acak (`brands/<uuid>.<ext>`); file lama dihapus saat diganti/dihapus. SVG dibersihkan dengan allowlist elemen/atribut (`App\Support\Svg\SvgSanitizer`: tanpa skrip, event handler, `foreignObject`, DOCTYPE/entity, atau URL eksternal). Jalankan `php artisan storage:link` sekali agar `/storage/...` bisa diakses. URL file publik relatif (`/storage/...`, lewat proxy frontend); isi `PUBLIC_STORAGE_URL` bila perlu URL absolut (mis. CDN).
 - Semua perubahan dicatat di `audit_logs` (`admin.brand.created`, `admin.branch.updated`, `admin.brand.logo_updated`, …) beserta kolom yang berubah.
+
+## Admin panel: armada (mobil & foto)
+
+| Endpoint (`/api/v1/admin`) | Keterangan |
+|---|---|
+| `GET /cars` | Daftar: `q` (model, plat, merek), `sort` = `model_name`/`year`/`daily_price`/`created_at` (default `-created_at`), filter `status`, `category_id`, `brand_id`, `branch_id` (Super Admin saja). Item berisi `thumbnail_url`, `photos_count`, `has_3d` |
+| `GET /cars/{id}` | Detail + `photos` (`urls` per lebar 480/960/1440 atau `null` selama diproses) + `version` |
+| `POST /cars`, `PATCH /cars/{id}`, `DELETE /cars/{id}` | Tambah, ubah (wajib `version`), hapus (*soft delete*) |
+| `POST /cars/{id}/photos` | `multipart/form-data` field `photo` (+ `alt_text` opsional): JPG/PNG/WebP ≤ 2 MB, maksimal 6000 × 6000 px, maksimal 5 foto per mobil |
+| `PATCH /cars/{id}/photos/order` | `{"photo_ids": [...]}` berisi semua foto mobil dalam urutan baru; foto pertama = foto utama |
+| `DELETE /cars/{id}/photos/{photoId}` | Hapus foto + filenya; urutan sisa dirapikan |
+
+- **Akses:** Super Admin dan Staf. Staf hanya melihat/mengubah mobil cabangnya (cabang lain → 404) dan mobil baru selalu masuk cabangnya (`branch_id` dari Staf diabaikan).
+- **Validasi:** tahun 2000 s.d. tahun berjalan (WIB) + 1, kursi 2–16, harga per hari Rp100.000–Rp10.000.000, deposit Rp0–Rp10.000.000, maksimal 12 fasilitas. Plat dinormalisasi (`b1234xyz` → `B 1234 XYZ`) dan unik di antara mobil yang belum dihapus.
+- **Slug** dibuat sekali saat tambah (`merek-model-tahun-warna`, akhiran `-2` bila sudah dipakai) dan tidak berubah saat mobil diubah.
+- **Pemesanan aktif:** ubah status ke `maintenance`/`inactive`, pindah cabang, atau hapus mobil yang masih punya pemesanan penahan jadwal → 409 `car_has_active_bookings` dengan `errors[0].details.bookings` (`code`, `status`, `pickup_at`). Untuk perubahan status, kirim ulang dengan `force_cancel_bookings: true` + `cancel_reason` (5–300 karakter) untuk membatalkan pemesanan tersebut (riwayat status + audit); sewa yang sedang berjalan tidak pernah dibatalkan.
+- **Foto:** file asli disimpan privat, lalu job antrean `ProcessCarPhoto` (Intervention Image 3, GD) membuat varian WebP 480/960/1440 px (tanpa memperbesar), membuang metadata (termasuk lokasi GPS), lalu menghapus file asli. Butuh worker antrean (`composer dev` sudah menjalankannya); tanpa worker foto tetap "diproses". `upload_max_filesize`/`post_max_size` PHP minimal 2 MB.
+- Audit: `admin.car.created|updated|deleted|photo_added|photo_removed|photos_reordered`, dan `admin.booking.cancelled` untuk pemesanan yang dibatalkan.
 
 ## Seeding
 

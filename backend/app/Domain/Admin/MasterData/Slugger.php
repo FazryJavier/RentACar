@@ -12,13 +12,15 @@ final class Slugger
 {
     /**
      * @param  class-string<Model>  $model
+     * @param  bool  $includeTrashed  Also treat slugs of soft-deleted rows as taken.
      */
-    public function unique(string $model, string $name, ?int $ignoreId = null): string
+    public function unique(string $model, string $name, ?int $ignoreId = null, bool $includeTrashed = false): string
     {
         $base = Str::slug($name);
         $base = $base === '' ? 'item' : $base;
 
-        $taken = $model::query()
+        // Soft-deleted rows keep their slug (unique index), so callers with soft deletes pass $includeTrashed.
+        $taken = ($includeTrashed ? $model::query()->withoutGlobalScopes() : $model::query())
             ->where(fn ($query) => $query->where('slug', $base)->orWhere('slug', 'like', $base.'-%'))
             ->when($ignoreId !== null, fn ($query) => $query->whereKeyNot($ignoreId))
             ->pluck('slug')
