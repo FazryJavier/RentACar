@@ -57,6 +57,10 @@ function retryAfterFrom(response: Response): number | undefined {
 }
 
 async function parse<T>(response: Response): Promise<T> {
+  return (await parseEnvelope<T>(response)).data;
+}
+
+async function parseEnvelope<T>(response: Response): Promise<{ data: T; meta: unknown }> {
   let body: unknown;
   try {
     body = await response.json();
@@ -77,7 +81,7 @@ async function parse<T>(response: Response): Promise<T> {
     );
   }
 
-  return body.data as T;
+  return { data: body.data as T, meta: body.meta };
 }
 
 /**
@@ -93,6 +97,27 @@ export async function apiGet<T>(path: string, init: { signal?: AbortSignal } = {
   });
 
   return parse<T>(response);
+}
+
+/** Pagination details in `meta` of collection responses. */
+export type PageMeta = { page: number; per_page: number; total: number; total_pages: number };
+
+export type Page<T> = { data: T[]; meta: PageMeta };
+
+/** GET a collection: the items from `data` and the pagination from `meta`. */
+export async function apiGetPage<T>(
+  path: string,
+  init: { signal?: AbortSignal } = {},
+): Promise<Page<T>> {
+  const response = await fetch(`/api/v1${path}`, {
+    method: "GET",
+    credentials: "include",
+    headers: { Accept: "application/json" },
+    signal: init.signal,
+  });
+
+  const { data, meta } = await parseEnvelope<T[]>(response);
+  return { data, meta: meta as PageMeta };
 }
 
 function readXsrfCookie(): string | null {
@@ -122,15 +147,18 @@ async function send<T>(
       await refreshCsrfCookie();
     }
 
+    const multipart = typeof FormData !== "undefined" && body instanceof FormData;
+
     return fetch(`/api/v1${path}`, {
       method,
       credentials: "include",
       headers: {
         Accept: "application/json",
-        "Content-Type": "application/json",
+        // The browser sets the multipart boundary itself.
+        ...(multipart ? {} : { "Content-Type": "application/json" }),
         "X-XSRF-TOKEN": readXsrfCookie() ?? "",
       },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : multipart ? body : JSON.stringify(body),
     });
   };
 
@@ -155,4 +183,13 @@ export function apiPatch<T>(path: string, body?: unknown): Promise<T> {
 
 export function apiPut<T>(path: string, body?: unknown): Promise<T> {
   return send<T>("PUT", path, body);
+}
+
+export function apiDelete<T>(path: string): Promise<T> {
+  return send<T>("DELETE", path);
+}
+
+/** POST `multipart/form-data` (file uploads) with the CSRF header. */
+export function apiUpload<T>(path: string, form: FormData): Promise<T> {
+  return send<T>("POST", path, form);
 }

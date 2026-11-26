@@ -27,6 +27,7 @@ final readonly class QuerySpec
      * @param  string  $defaultSort  A key of $sorts, optionally prefixed with "-".
      * @param  list<string>  $searchColumns  Columns matched case-insensitively by `q`.
      * @param  array<string, string|Closure>  $filters  Filter key => column, or callback `fn (Builder $query, mixed $value): void`.
+     * @param  list<string>  $tieBreakers  Columns ordered ascending after the requested sort (stable pages).
      */
     public function __construct(
         public string $audience = self::AUDIENCE_PUBLIC,
@@ -34,6 +35,7 @@ final readonly class QuerySpec
         public string $defaultSort = '',
         public array $searchColumns = [],
         public array $filters = [],
+        public array $tieBreakers = [],
     ) {
         if (! isset(self::PAGE_SIZES[$audience])) {
             throw new InvalidArgumentException("Unknown audience [{$audience}].");

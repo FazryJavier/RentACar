@@ -4,6 +4,10 @@ use App\Http\Controllers\Api\V1\Admin\Auth\ForgotPasswordController as AdminForg
 use App\Http\Controllers\Api\V1\Admin\Auth\LoginController as AdminLoginController;
 use App\Http\Controllers\Api\V1\Admin\Auth\LogoutController as AdminLogoutController;
 use App\Http\Controllers\Api\V1\Admin\Auth\ResetPasswordController as AdminResetPasswordController;
+use App\Http\Controllers\Api\V1\Admin\MasterData\BranchController;
+use App\Http\Controllers\Api\V1\Admin\MasterData\BrandController;
+use App\Http\Controllers\Api\V1\Admin\MasterData\BrandLogoController;
+use App\Http\Controllers\Api\V1\Admin\MasterData\CategoryController;
 use App\Http\Controllers\Api\V1\Admin\MeController as AdminMeController;
 use App\Http\Controllers\Api\V1\Auth\ForgotPasswordController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
@@ -62,6 +66,24 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             Route::post('auth/logout', AdminLogoutController::class)->name('auth.logout');
             Route::get('me', [AdminMeController::class, 'show'])->name('me.show');
             Route::put('me/password', [AdminMeController::class, 'password'])->name('me.password');
+
+            // Master data. Brands and categories: every admin. Branches: read for every admin,
+            // write for Super Admin only.
+            Route::apiResource('brands', BrandController::class)->except('update');
+            Route::patch('brands/{brand}', [BrandController::class, 'update'])->name('brands.update');
+            Route::post('brands/{brand}/logo', [BrandLogoController::class, 'store'])->name('brands.logo.store');
+            Route::delete('brands/{brand}/logo', [BrandLogoController::class, 'destroy'])->name('brands.logo.destroy');
+
+            Route::apiResource('categories', CategoryController::class)->except('update');
+            Route::patch('categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+
+            Route::get('branches', [BranchController::class, 'index'])->name('branches.index');
+            Route::get('branches/{branch}', [BranchController::class, 'show'])->name('branches.show');
+            Route::middleware('admin.role:super_admin')->group(function (): void {
+                Route::post('branches', [BranchController::class, 'store'])->name('branches.store');
+                Route::patch('branches/{branch}', [BranchController::class, 'update'])->name('branches.update');
+                Route::delete('branches/{branch}', [BranchController::class, 'destroy'])->name('branches.destroy');
+            });
         });
     });
 });

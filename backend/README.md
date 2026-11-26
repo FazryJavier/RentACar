@@ -131,6 +131,23 @@ Guard `admin` (tabel `admins`) terpisah dari guard pelanggan `web`; password bro
 - **Menu:** `App\Enums\AdminMenu` menentukan menu per peran; UI hanya menyembunyikan, server tetap memeriksa.
 - Pelanggan dan admin bisa masuk bersamaan di satu browser (guard berbeda, satu cookie sesi).
 
+## Admin panel: data master (merek, kategori, cabang)
+
+| Endpoint (`/api/v1/admin`) | Akses | Keterangan |
+|---|---|---|
+| `GET /brands`, `GET /brands/{id}` | Semua admin | Daftar (`q`, `sort` = `name`/`updated_at`, `page`, `per_page`) dan detail |
+| `POST /brands`, `PATCH /brands/{id}`, `DELETE /brands/{id}` | Semua admin | Nama unik tanpa membedakan huruf besar/kecil; slug dibuat otomatis |
+| `POST /brands/{id}/logo`, `DELETE /brands/{id}/logo` | Semua admin | `multipart/form-data` field `logo`: JPG/PNG/WebP/SVG ≤ 1 MB (tipe dicek dari isi file) |
+| `GET /categories`, `GET /categories/{id}` | Semua admin | `sort` = `sort_order`/`name`; urutan nama sebagai pemecah seri |
+| `POST /categories`, `PATCH /categories/{id}`, `DELETE /categories/{id}` | Semua admin | `name`, `description` (opsional), `sort_order` 0–999 |
+| `GET /branches`, `GET /branches/{id}` | Semua admin | Filter `filter[is_active]`, `filter[city]` |
+| `POST /branches`, `PATCH /branches/{id}`, `DELETE /branches/{id}` | Super Admin | Jam `HH:mm` (tutup setelah buka), telepon 8–15 digit (disimpan `62…`/`0…` tanpa spasi), koordinat |
+
+- **Kunci optimistis:** setiap respons berisi `version`. `PATCH` wajib mengirim `version` terakhir; bila data sudah diubah admin lain → 409 `version_conflict` (field `version`). Muat ulang lalu kirim lagi.
+- **Data yang masih dipakai:** `DELETE` → 409 `resource_in_use` dengan `errors[0].details.usage` (mis. `{"cars": 3}`) dan pesan seperti "Merek masih dipakai 3 mobil."
+- **Logo:** disimpan di disk `public` dengan nama acak (`brands/<uuid>.<ext>`); file lama dihapus saat diganti/dihapus. SVG dibersihkan dengan allowlist elemen/atribut (`App\Support\Svg\SvgSanitizer`: tanpa skrip, event handler, `foreignObject`, DOCTYPE/entity, atau URL eksternal). Jalankan `php artisan storage:link` sekali agar `/storage/...` bisa diakses.
+- Semua perubahan dicatat di `audit_logs` (`admin.brand.created`, `admin.branch.updated`, `admin.brand.logo_updated`, …) beserta kolom yang berubah.
+
 ## Seeding
 
 ```bash

@@ -89,7 +89,7 @@ final class ValidationErrorMapper
 
         return match (true) {
             str_starts_with($rule, 'Required'), in_array($rule, ['Present', 'Filled'], true) => self::REQUIRED,
-            $rule === 'Unique' => self::NOT_UNIQUE,
+            in_array($rule, ['Unique', 'UniqueLowerName'], true) => self::NOT_UNIQUE,
             $rule === 'Confirmed' => self::MISMATCH,
             in_array($rule, self::FILE_TYPE_RULES, true) => self::INVALID_FILE_TYPE,
             in_array($rule, self::SIZE_RULES, true) => $this->sizeCode($validator, $field, $rule, $parameters),

@@ -13,6 +13,7 @@ final class AuditLogger
 {
     /**
      * @param  array<string, scalar|null>  $meta
+     * @param  array<string, array{0: mixed, 1: mixed}>  $changes  Changed fields: [old, new] (never secrets).
      */
     public function record(
         ActorType $actorType,
@@ -21,6 +22,7 @@ final class AuditLogger
         ?Model $subject = null,
         array $meta = [],
         ?string $ip = null,
+        array $changes = [],
     ): void {
         DB::table('audit_logs')->insert([
             'actor_type' => $actorType->value,
@@ -28,6 +30,7 @@ final class AuditLogger
             'action' => $action,
             'subject_type' => $subject !== null ? $subject->getMorphClass() : null,
             'subject_id' => $subject?->getKey(),
+            'changes' => $changes === [] ? null : json_encode($changes, JSON_THROW_ON_ERROR),
             'meta' => $meta === [] ? null : json_encode($meta, JSON_THROW_ON_ERROR),
             'ip_address' => $ip,
         ]);

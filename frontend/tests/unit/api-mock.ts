@@ -16,6 +16,28 @@ export function ok(data: unknown, message = "OK") {
   return { code: 200, success: true, message, data, errors: null, meta: null };
 }
 
+/** Collection envelope with pagination in `meta`. */
+export function okPage(
+  data: unknown[],
+  meta: Partial<{ page: number; per_page: number; total: number; total_pages: number }> = {},
+) {
+  const total = meta.total ?? data.length;
+  return {
+    code: 200,
+    success: true,
+    message: "OK",
+    data,
+    errors: null,
+    meta: {
+      page: 1,
+      per_page: 25,
+      total,
+      total_pages: Math.max(1, Math.ceil(total / 25)),
+      ...meta,
+    },
+  };
+}
+
 export function fail(status: number, message: string, errors: unknown[] = []) {
   return { code: status, success: false, message, data: null, errors, meta: null };
 }
@@ -41,7 +63,10 @@ export function mockApi(routes: Record<string, MockResponse | MockResponse[]>) {
         return new Response(null, { status: 204 });
       }
       const key = `${init.method ?? "GET"} ${url.replace("/api/v1", "")}`;
-      calls.push({ key, body: init.body ? JSON.parse(String(init.body)) : undefined });
+      calls.push({
+        key,
+        body: typeof init.body === "string" ? JSON.parse(init.body) : (init.body ?? undefined),
+      });
       const queue = queues.get(key);
       const next = queue && queue.length > 1 ? queue.shift()! : queue?.[0];
       if (!next) {

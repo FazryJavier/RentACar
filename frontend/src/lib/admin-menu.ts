@@ -108,10 +108,12 @@ export function activeMenuItem(pathname: string): AdminMenuItem | undefined {
   );
 }
 
+/** Modules that already have their own pages. */
+const BUILT_SECTIONS = ["brands", "categories", "branches"];
+
 /** Module sections that exist as placeholder pages until their stories ship. */
 export const PLACEHOLDER_SECTIONS: Record<string, string> = Object.fromEntries(
-  ADMIN_MENU.filter((item) => item.href !== "/admin").map((item) => [
-    item.href.replace("/admin/", ""),
-    item.key,
-  ]),
+  ADMIN_MENU.filter((item) => item.href !== "/admin" && !BUILT_SECTIONS.includes(item.key)).map(
+    (item) => [item.href.replace("/admin/", ""), item.key],
+  ),
 );

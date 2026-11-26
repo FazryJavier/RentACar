@@ -49,7 +49,17 @@ next.config.ts        Rewrite /api, /sanctum, /docs, /storage → Laravel (BACKE
 - `app/admin/(panel)`: `RequireAdmin` + `AdminShell` (sidebar 264 px yang bisa diciutkan ke 72 px dan diingat per browser, laci di bawah 1024 px, topbar dengan cabang Staf dan menu akun). `/admin` = halaman sambutan; modul yang belum dibangun menampilkan "Segera hadir".
 - Menu sidebar berasal dari `GET /api/v1/admin/me` (`menu`), dipetakan di `src/lib/admin-menu.ts`.
 - `proxy.ts` juga menjaga `/admin/*` (kecuali halaman masuk/lupa/atur ulang) → `/admin/masuk?next=…`.
-- E2E admin (`tests/e2e/admin-panel.spec.ts`) berjalan bila `E2E_ADMIN_EMAIL` dan `E2E_ADMIN_PASSWORD` di-set.
+- E2E admin (`tests/e2e/admin-panel.spec.ts`, `admin-master-data.spec.ts`) berjalan bila `E2E_ADMIN_EMAIL` dan `E2E_ADMIN_PASSWORD` di-set; alur tulis Super Admin butuh `E2E_SUPER_ADMIN_EMAIL` dan `E2E_SUPER_ADMIN_PASSWORD`.
+
+### Pola halaman CRUD admin
+
+Halaman `/admin/merek`, `/admin/kategori`, `/admin/cabang` memakai pola bersama di `src/components/admin/crud/`:
+
+- **`useAdminList(key, fetcher, defaults)`** (`src/hooks`) menyimpan `page`, `per_page`, `sort`, `q`, dan `filter[...]` di URL (bisa dibagikan/di-refresh); mengubah pencarian, filter, atau ukuran halaman kembali ke halaman 1. Data dimuat lewat TanStack Query dengan data sebelumnya tetap tampil saat berganti halaman.
+- **`DataTable`** (TanStack Table v8, paginasi & sortir di server): pencarian dengan jeda 300 ms (minimal 2 karakter), slot filter, header sortir dengan `aria-sort`, skeleton/kosong/error + "Coba lagi", menu aksi per baris, footer "Menampilkan a–b dari n" + ukuran halaman + paginasi. Di layar kecil tabel bergulir di dalam kartunya dan kolom nama tetap menempel.
+- **`FormSheet`** (panel kanan, layar penuh di ponsel) dan **`ConfirmDialog`** (hapus). `useCrudPage` mengatur buka/tutup, toast, dan muat ulang daftar; `useSaveErrors` memetakan galat server: 422 ke field, 409 `version_conflict` ke peringatan dengan tombol "Muat ulang", 409 `resource_in_use` tetap di dialog hapus, 401 ke halaman masuk admin.
+- Klien: `src/lib/admin-api.ts` (`brandsApi`, `categoriesApi`, `branchesApi`, `mapAdminError`); `apiUpload` untuk `multipart/form-data` (logo).
+- **Peta cabang:** `BranchMapPicker` memakai Leaflet langsung (tanpa `react-leaflet`), dimuat hanya di browser (`next/dynamic`, `ssr: false`) dengan tile OpenStreetMap + atribusi. Klik peta atau geser penanda mengisi latitude/longitude (6 desimal); input koordinat tetap bisa diketik (jalur keyboard). Staf hanya melihat panel detail cabang tanpa aksi ubah/hapus.
 
 ## Design tokens & komponen
 
