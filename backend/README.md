@@ -166,6 +166,23 @@ Guard `admin` (tabel `admins`) terpisah dari guard pelanggan `web`; password bro
 - **Foto:** file asli disimpan privat, lalu job antrean `ProcessCarPhoto` (Intervention Image 3, GD) membuat varian WebP 480/960/1440 px (tanpa memperbesar), membuang metadata (termasuk lokasi GPS), lalu menghapus file asli. Butuh worker antrean (`composer dev` sudah menjalankannya); tanpa worker foto tetap "diproses". `upload_max_filesize`/`post_max_size` PHP minimal 2 MB.
 - Audit: `admin.car.created|updated|deleted|photo_added|photo_removed|photos_reordered`, dan `admin.booking.cancelled` untuk pemesanan yang dibatalkan.
 
+## Admin panel: model 3D, penanda kondisi, inspeksi
+
+| Endpoint (`/api/v1/admin/cars/{id}`) | Keterangan |
+|---|---|
+| `POST /model` | Unggah/ganti `.glb` (`multipart`: `file`, `source_name`, `license`, `source_url` opsional, `is_illustrative`). Mengganti file menaikkan `model_version` dan menghapus file + poster lama |
+| `PATCH /model` | `camera` (`position`, `target`: 3 angka, ±1000), sumber, lisensi, `is_illustrative` |
+| `POST /model/poster` | Gambar poster (`poster`): disimpan ulang sebagai WebP ≤ 1600 px tanpa metadata |
+| `DELETE /model` | Hapus model + poster; penanda lama tetap ada dan ditandai perlu dipindahkan |
+| `GET`/`POST /conditions`, `PATCH`/`DELETE /conditions/{conditionId}` | Penanda kondisi (`area`, `severity`, `description` 5–300, `inspected_on` ≤ hari ini WIB, `position`/`normal` wajib bila ada model). `PATCH` dengan posisi baru memakai versi model saat ini; `is_resolved` mengisi/mengosongkan `resolved_at` |
+| `POST`/`DELETE /conditions/{conditionId}/photos[/{photoId}]` | Foto kondisi (maks 3; JPG/PNG/WebP ≤ 2 MB, ≤ 4000×4000 px) disimpan ulang sebagai WebP ≤ 1280 px tanpa metadata |
+| `GET`/`POST /inspections` | Inspeksi (`inspected_at` ISO 8601 tidak di masa depan, `odometer_km` 0–2.000.000, `notes`); memperbarui `cars.last_inspected_at` (yang terbaru) dan `odometer_km` (hanya naik) |
+
+- **Validasi `.glb`** (`App\Domain\Fleet\GlbValidator`): header `glTF` versi 2, panjang sesuai ukuran file (≤ 15 MB), chunk pertama JSON (≤ 4 MB) dengan `asset.version` 2.x, dan tanpa rujukan file eksternal (`buffers[].uri`/`images[].uri` hanya boleh kosong atau `data:`). Gagal → 422 pada `file` dengan alasan.
+- `needs_reposition` = penanda punya posisi tetapi model sudah diganti (versi berbeda) atau dihapus.
+- Audit: `admin.car.model_uploaded|model_updated|model_removed`, `admin.car.condition_created|condition_updated|condition_deleted`, `admin.car.inspection_recorded`.
+- File `.glb` sebaiknya dikompres dengan `gltf-transform` sebelum diunggah. Server web produksi perlu menyajikan `.glb` sebagai `model/gltf-binary`.
+
 ## Seeding
 
 ```bash

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { RequireAdmin } from "@/components/admin/require-admin";
 import { CarEditor } from "@/components/admin/fleet/car-editor";
 
 export const metadata: Metadata = { title: "Tambah mobil — Admin RentACar" };
@@ -7,8 +8,10 @@ export const metadata: Metadata = { title: "Tambah mobil — Admin RentACar" };
 export default function AdminNewCarPage() {
   // The form reads the current WIB year, so it renders per request (inside Suspense).
   return (
-    <Suspense>
-      <CarEditor id={null} />
-    </Suspense>
+    <RequireAdmin>
+      <Suspense>
+        <CarEditor id={null} />
+      </Suspense>
+    </RequireAdmin>
   );
 }

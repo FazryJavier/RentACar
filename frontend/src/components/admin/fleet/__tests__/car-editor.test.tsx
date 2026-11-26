@@ -59,7 +59,7 @@ describe("CarEditor — create", () => {
 
     await choose(user, "Merek", "Toyota");
     await choose(user, "Kategori", "SUV");
-    await user.type(screen.getByLabelText(/^Model/), "Fortuner");
+    await user.type(screen.getByRole("textbox", { name: "Model" }), "Fortuner");
     await user.type(screen.getByLabelText(/^Warna/), "Hitam");
     await user.type(screen.getByLabelText(/^Plat nomor/), "b 1234 xyz");
     await user.type(screen.getByLabelText(/^Fasilitas/), "AC{Enter}");
@@ -102,7 +102,7 @@ describe("CarEditor — create", () => {
 
     await choose(user, "Merek", "Toyota");
     await choose(user, "Kategori", "SUV");
-    await user.type(screen.getByLabelText(/^Model/), "Fortuner");
+    await user.type(screen.getByRole("textbox", { name: "Model" }), "Fortuner");
     await user.type(screen.getByLabelText(/^Warna/), "Hitam");
     await user.type(screen.getByLabelText(/^Plat nomor/), "B 1234 XYZ");
     await user.click(screen.getByRole("button", { name: "Simpan" }));

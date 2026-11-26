@@ -46,3 +46,6 @@ next-env.d.ts
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Draco decoder copied from node_modules/three at dev/build time (scripts/copy-draco.mjs)
+/public/draco/

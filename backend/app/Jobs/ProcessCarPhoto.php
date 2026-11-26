@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Domain\Fleet\CarPhotoStore;
+use App\Domain\Media\ImageReencoder;
 use App\Models\CarPhoto;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -10,7 +11,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Intervention\Image\ImageManager;
 use Throwable;
 
 /**
@@ -24,8 +24,6 @@ final class ProcessCarPhoto implements ShouldQueue
     /** Variant widths, largest first (each step scales the previous result down). */
     public const WIDTHS = [1440, 960, 480];
 
-    public const QUALITY = 80;
-
     public int $tries = 3;
 
     /** @var list<int> */
@@ -33,7 +31,7 @@ final class ProcessCarPhoto implements ShouldQueue
 
     public function __construct(public readonly int $photoId) {}
 
-    public function handle(): void
+    public function handle(ImageReencoder $reencoder): void
     {
         $photo = CarPhoto::query()->find($this->photoId);
         if ($photo === null || $photo->isProcessed()) {
@@ -44,18 +42,14 @@ final class ProcessCarPhoto implements ShouldQueue
         $public = Storage::disk(CarPhotoStore::PUBLIC_DISK);
         $written = [];
 
-        // A 6000 × 6000 px image needs ~150 MB as a GD bitmap.
-        ini_set('memory_limit', '512M');
-
         try {
-            $image = ImageManager::gd(autoOrientation: true, decodeAnimation: false)->read((string) $original->get($photo->path));
+            $encoded = $reencoder->variants((string) $original->get($photo->path), self::WIDTHS);
             $base = "cars/{$photo->car_id}/".Str::uuid()->toString();
             $variants = [];
 
-            foreach (self::WIDTHS as $width) {
-                $image->scaleDown(width: $width);
+            foreach ($encoded as $width => $bytes) {
                 $path = "{$base}-{$width}.webp";
-                $public->put($path, (string) $image->toWebp(quality: self::QUALITY));
+                $public->put($path, $bytes);
                 $written[] = $path;
                 $variants[(string) $width] = $path;
             }

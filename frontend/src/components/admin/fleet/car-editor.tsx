@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FormAlert } from "@/components/auth/form-alert";
 import {
   Button,
@@ -15,10 +15,12 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui";
+import { useSetCurrentAdmin } from "@/hooks/useCurrentAdmin";
 import { ApiError } from "@/lib/api";
 import { carsApi, type Car } from "@/lib/admin-api";
 import { CarForm } from "./car-form";
 import { carName } from "./labels";
+import { ModelTab } from "./model-tab/model-tab";
 import { PhotoManager, carQueryKey } from "./photo-manager";
 
 const POLL_MS = 2_000;
@@ -45,6 +47,17 @@ export function CarEditor({ id }: { id: number | null }) {
     },
   });
 
+  const setAdmin = useSetCurrentAdmin();
+  const unauthenticated = query.error instanceof ApiError && query.error.status === 401;
+
+  useEffect(() => {
+    // The server session ended while the cached admin still looked signed in: clear it so the
+    // admin guard sends the visitor to the login page (with this page as `next`).
+    if (unauthenticated) {
+      setAdmin(null);
+    }
+  }, [unauthenticated, setAdmin]);
+
   const back = (
     <Link
       href="/admin/mobil"
@@ -55,7 +68,7 @@ export function CarEditor({ id }: { id: number | null }) {
     </Link>
   );
 
-  if (id !== null && query.isPending) {
+  if (id !== null && (query.isPending || unauthenticated)) {
     return (
       <div className="flex flex-col gap-4" aria-busy="true">
         {back}
@@ -65,7 +78,7 @@ export function CarEditor({ id }: { id: number | null }) {
     );
   }
 
-  if (id !== null && query.isError) {
+  if (id !== null && query.isError && !unauthenticated) {
     const missing = query.error instanceof ApiError && query.error.status === 404;
     return (
       <div className="flex flex-col gap-4">
@@ -106,7 +119,7 @@ export function CarEditor({ id }: { id: number | null }) {
           <TabsTrigger value="foto" disabled={car === null}>
             Foto{car ? ` (${car.photos.length})` : ""}
           </TabsTrigger>
-          <TabsTrigger value="model" disabled>
+          <TabsTrigger value="model" disabled={car === null}>
             Model 3D & Kondisi
           </TabsTrigger>
         </TabsList>
@@ -123,6 +136,9 @@ export function CarEditor({ id }: { id: number | null }) {
         </TabsContent>
         <TabsContent value="foto" className="pt-6">
           {car ? <PhotoManager car={car} /> : null}
+        </TabsContent>
+        <TabsContent value="model" className="pt-6">
+          {car ? <ModelTab car={car} /> : null}
         </TabsContent>
       </Tabs>
       {car === null ? (

@@ -54,7 +54,7 @@ test("admin adds a car with photos, reorders and deletes them, then deletes the 
   if (await page.getByRole("combobox", { name: "Cabang" }).isVisible()) {
     await chooseFirst(page, "Cabang");
   }
-  await page.getByLabel(/^Model/).fill("E2E Uji");
+  await page.getByRole("textbox", { name: "Model", exact: true }).fill("E2E Uji");
   await page.getByLabel(/^Warna/).fill("Merah");
   await page.getByLabel(/^Plat nomor/).fill(plate.toLowerCase());
   // In `next dev` the dev-tools badge can cover the bottom-right button: submit with Enter.

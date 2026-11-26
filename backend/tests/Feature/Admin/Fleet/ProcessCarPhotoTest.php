@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Media\ImageReencoder;
 use App\Jobs\ProcessCarPhoto;
 use App\Models\CarPhoto;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,7 +25,7 @@ function unprocessedPhoto(string $bytes): CarPhoto
 it('writes WebP variants of 480, 960 and 1440 px and deletes the original', function () {
     $photo = unprocessedPhoto(TestImages::jpeg(3000, 2000));
 
-    (new ProcessCarPhoto($photo->id))->handle();
+    (new ProcessCarPhoto($photo->id))->handle(new ImageReencoder);
 
     $photo->refresh();
     expect($photo->isProcessed())->toBeTrue()->and($photo->path)->toBe($photo->variants['1440']);
@@ -39,7 +40,7 @@ it('writes WebP variants of 480, 960 and 1440 px and deletes the original', func
 it('never upscales small photos', function () {
     $photo = unprocessedPhoto(TestImages::jpeg(800, 600));
 
-    (new ProcessCarPhoto($photo->id))->handle();
+    (new ProcessCarPhoto($photo->id))->handle(new ImageReencoder);
 
     $photo->refresh();
     expect(getimagesizefromstring(Storage::disk('public')->get($photo->variants['1440']))[0])->toBe(800)
@@ -54,7 +55,7 @@ it('removes EXIF metadata including GPS', function () {
     expect(@exif_read_data($tmp)['Make'] ?? null)->toBe('TestCam');
 
     $photo = unprocessedPhoto($original);
-    (new ProcessCarPhoto($photo->id))->handle();
+    (new ProcessCarPhoto($photo->id))->handle(new ImageReencoder);
 
     foreach ($photo->refresh()->variants as $path) {
         $bytes = Storage::disk('public')->get($path);
@@ -66,7 +67,7 @@ it('removes the photo and its files when processing fails for good', function ()
     $photo = unprocessedPhoto('bukan gambar');
     $job = new ProcessCarPhoto($photo->id);
 
-    expect(fn () => $job->handle())->toThrow(Exception::class);
+    expect(fn () => $job->handle(new ImageReencoder))->toThrow(Exception::class);
     $job->failed(new RuntimeException('decode failed'));
 
     expect(CarPhoto::query()->find($photo->id))->toBeNull()
@@ -77,8 +78,8 @@ it('removes the photo and its files when processing fails for good', function ()
 it('does nothing for a deleted or already processed photo', function () {
     $processed = CarPhoto::factory()->create();
 
-    (new ProcessCarPhoto($processed->id))->handle();
-    (new ProcessCarPhoto(999999))->handle();
+    (new ProcessCarPhoto($processed->id))->handle(new ImageReencoder);
+    (new ProcessCarPhoto(999999))->handle(new ImageReencoder);
 
     expect(Storage::disk('public')->allFiles())->toBe([]);
 });

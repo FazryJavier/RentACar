@@ -49,7 +49,7 @@ next.config.ts        Rewrite /api, /sanctum, /docs, /storage → Laravel (BACKE
 - `app/admin/(panel)`: `RequireAdmin` + `AdminShell` (sidebar 264 px yang bisa diciutkan ke 72 px dan diingat per browser, laci di bawah 1024 px, topbar dengan cabang Staf dan menu akun). `/admin` = halaman sambutan; modul yang belum dibangun menampilkan "Segera hadir".
 - Menu sidebar berasal dari `GET /api/v1/admin/me` (`menu`), dipetakan di `src/lib/admin-menu.ts`.
 - `proxy.ts` juga menjaga `/admin/*` (kecuali halaman masuk/lupa/atur ulang) → `/admin/masuk?next=…`.
-- E2E admin (`tests/e2e/admin-panel.spec.ts`, `admin-master-data.spec.ts`, `admin-fleet.spec.ts`) berjalan bila `E2E_ADMIN_EMAIL` dan `E2E_ADMIN_PASSWORD` di-set; alur tulis Super Admin butuh `E2E_SUPER_ADMIN_EMAIL` dan `E2E_SUPER_ADMIN_PASSWORD`.
+- E2E admin (`tests/e2e/admin-panel.spec.ts`, `admin-master-data.spec.ts`, `admin-fleet.spec.ts`, `admin-model-3d.spec.ts` — dilewati otomatis bila browser tidak punya WebGL) berjalan bila `E2E_ADMIN_EMAIL` dan `E2E_ADMIN_PASSWORD` di-set; alur tulis Super Admin butuh `E2E_SUPER_ADMIN_EMAIL` dan `E2E_SUPER_ADMIN_PASSWORD`.
 
 ### Pola halaman CRUD admin
 
@@ -60,7 +60,15 @@ Halaman `/admin/merek`, `/admin/kategori`, `/admin/cabang` memakai pola bersama 
 - **`FormSheet`** (panel kanan, layar penuh di ponsel) dan **`ConfirmDialog`** (hapus). `useCrudPage` mengatur buka/tutup, toast, dan muat ulang daftar; `useSaveErrors` memetakan galat server: 422 ke field, 409 `version_conflict` ke peringatan dengan tombol "Muat ulang", 409 `resource_in_use` tetap di dialog hapus, 401 ke halaman masuk admin.
 - Klien: `src/lib/admin-api.ts` (`brandsApi`, `categoriesApi`, `branchesApi`, `mapAdminError`); `apiUpload` untuk `multipart/form-data` (logo).
 - **Armada:** `/admin/mobil` (daftar dengan foto kecil, plat, kategori, cabang, harga, status, ikon 3D), `/admin/mobil/baru` dan `/admin/mobil/[id]` (`CarEditor` bertab Data · Foto · Model 3D & Kondisi). Tab Foto memakai `FileDropzone` mode `multiple` (diunggah satu per satu, maksimal 5), menampilkan "Memproses…" sambil memuat ulang data tiap 2 detik (maks. 60 detik), urutan lewat seret-lepas atau tombol "Geser ke kiri/kanan" (keyboard & layar sentuh), dan hapus dengan konfirmasi. Ubah status yang terhalang pemesanan aktif membuka dialog daftar pemesanan + alasan ("Tetap ubah").
+- **Model 3D & kondisi:** tab ketiga editor mobil (`components/admin/fleet/model-tab/`): unggah `.glb` + sumber/lisensi, "Simpan sudut kamera" (kamera + poster dari kanvas), tambah penanda dengan klik model, penanda tanpa model (area saja), "Perlu penyesuaian posisi" setelah model diganti, "Sudah diperbaiki", foto kondisi, dan log inspeksi (waktu WIB).
 - **Peta cabang:** `BranchMapPicker` memakai Leaflet langsung (tanpa `react-leaflet`), dimuat hanya di browser (`next/dynamic`, `ssr: false`) dengan tile OpenStreetMap + atribusi. Klik peta atau geser penanda mengisi latitude/longitude (6 desimal); input koordinat tetap bisa diketik (jalur keyboard). Staf hanya melihat panel detail cabang tanpa aksi ubah/hapus.
+
+## Penampil 3D (`CarViewer`)
+
+- `src/components/car-viewer/`: three.js + React Three Fiber + drei, dimuat hanya di browser (`next/dynamic`, `ssr: false`) dan hanya bila WebGL tersedia; selain itu tampil `fallback` (galeri/teks). Error saat memuat model juga jatuh ke `fallback`.
+- `frameloop="demand"`, DPR ≤ 1,5. Mode `editor`: klik permukaan (bukan drag) menghasilkan posisi + normal dalam koordinat model (`lib/three/model-space.ts`).
+- Hotspot berupa tombol DOM di atas kanvas (bisa Tab/Enter, punya nama aksesibel) yang posisinya diproyeksikan dari titik 3D tiap frame dan diredupkan bila tertutup model.
+- Decoder Draco disalin dari paket `three` ke `public/draco/` oleh `scripts/copy-draco.mjs` (otomatis lewat `predev`, `prebuild`, `pretest:e2e`; folder ini tidak di-commit). Meshopt ikut dibundel. Tidak ada CDN.
 
 ## Design tokens & komponen
 
