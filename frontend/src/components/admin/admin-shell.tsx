@@ -8,14 +8,14 @@ import { Topbar } from "./topbar";
 
 export const SIDEBAR_COLLAPSED_KEY = "rentacar.admin-sidebar.collapsed";
 
-/** Admin panel frame: skip link, sidebar (drawer below 1024px), topbar, main content. */
+/**
+ * Admin panel frame: skip link, sidebar (drawer below 1024px), topbar, main content. It always
+ * renders `{children}`; sidebar and topbar appear once the session is known, and each page
+ * guards its own content with `RequireAdmin`.
+ */
 export function AdminShell({ children }: { children: ReactNode }) {
   const { admin } = useCurrentAdmin();
   const [collapsed, setCollapsed] = useStoredFlag(SIDEBAR_COLLAPSED_KEY);
-
-  if (!admin) {
-    return null;
-  }
 
   return (
     <div className="bg-bg flex min-h-dvh">
@@ -25,9 +25,17 @@ export function AdminShell({ children }: { children: ReactNode }) {
       >
         Lewati ke konten
       </a>
-      <Sidebar menu={admin.menu} collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+      {admin ? (
+        <Sidebar
+          menu={admin.menu}
+          collapsed={collapsed}
+          onToggle={() => setCollapsed(!collapsed)}
+        />
+      ) : (
+        <div aria-hidden="true" className="bg-navy-900 hidden w-66 lg:block" />
+      )}
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar admin={admin} />
+        {admin ? <Topbar admin={admin} /> : null}
         <main
           id="konten"
           tabIndex={-1}

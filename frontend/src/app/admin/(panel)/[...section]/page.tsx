@@ -1,5 +1,6 @@
 import { Hammer } from "lucide-react";
 import { notFound } from "next/navigation";
+import { RequireAdmin } from "@/components/admin/require-admin";
 import { EmptyState } from "@/components/ui";
 import { ADMIN_MENU, PLACEHOLDER_SECTIONS } from "@/lib/admin-menu";
 
@@ -18,13 +19,15 @@ export default async function AdminSectionPlaceholder({
   }
 
   return (
-    <div className="bg-surface rounded-lg shadow-sm">
-      <EmptyState
-        icon={Hammer}
-        title="Segera hadir"
-        description={`Modul ${item.label} sedang dibangun dan akan tersedia di pembaruan berikutnya.`}
-      />
-    </div>
+    <RequireAdmin>
+      <div className="bg-surface rounded-lg shadow-sm">
+        <EmptyState
+          icon={Hammer}
+          title="Segera hadir"
+          description={`Modul ${item.label} sedang dibangun dan akan tersedia di pembaruan berikutnya.`}
+        />
+      </div>
+    </RequireAdmin>
   );
 }
 

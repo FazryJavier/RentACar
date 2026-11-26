@@ -1,18 +1,27 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import Page from "@/app/admin/(panel)/[...section]/page";
+import { mockApi, ok, staffFixture } from "../../../../tests/unit/api-mock";
+import { nav } from "../../../../tests/unit/navigation-mock";
+import { renderWithProviders } from "../../../../tests/unit/render-with-providers";
 
-vi.mock("next/navigation", () => ({
-  notFound: () => {
-    throw new Error("NEXT_NOT_FOUND");
-  },
-}));
+vi.mock("next/navigation", async () => {
+  const { navigationModule } = await import("../../../../tests/unit/navigation-mock");
+  return {
+    ...navigationModule(),
+    notFound: () => {
+      throw new Error("NEXT_NOT_FOUND");
+    },
+  };
+});
 
 describe("admin section placeholder", () => {
-  it("renders 'Segera hadir' for a known module", async () => {
-    render(await Page({ params: Promise.resolve({ section: ["mobil"] }) }));
+  it("renders 'Segera hadir' for a known module to a signed-in admin", async () => {
+    nav.reset("/admin/mobil");
+    mockApi({ "GET /admin/me": { status: 200, body: ok(staffFixture) } });
+    renderWithProviders(await Page({ params: Promise.resolve({ section: ["mobil"] }) }));
 
-    expect(screen.getByRole("heading", { name: "Segera hadir" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Segera hadir" })).toBeInTheDocument();
     expect(screen.getByText(/Modul Mobil sedang dibangun/)).toBeInTheDocument();
   });
 

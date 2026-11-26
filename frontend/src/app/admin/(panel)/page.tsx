@@ -1,5 +1,10 @@
+import { RequireAdmin } from "@/components/admin/require-admin";
 import { AdminWelcome } from "@/components/admin/welcome";
 
 export default function AdminDashboardPage() {
-  return <AdminWelcome />;
+  return (
+    <RequireAdmin>
+      <AdminWelcome />
+    </RequireAdmin>
+  );
 }

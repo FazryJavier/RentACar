@@ -1,5 +1,10 @@
 import { AdminProfile } from "@/components/admin/admin-profile";
+import { RequireAdmin } from "@/components/admin/require-admin";
 
 export default function AdminProfilePage() {
-  return <AdminProfile />;
+  return (
+    <RequireAdmin>
+      <AdminProfile />
+    </RequireAdmin>
+  );
 }
