@@ -45,10 +45,18 @@ function sidebar() {
 }
 
 describe("AdminShell", () => {
+  it("renders its children before the session is known", async () => {
+    renderShell(staffFixture);
+
+    expect(screen.getByText("Isi")).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Menu admin" })).not.toBeInTheDocument();
+    await screen.findAllByRole("navigation", { name: "Menu admin" });
+  });
+
   it("shows only the Staf menus and marks the active section", async () => {
     renderShell(staffFixture);
 
-    await screen.findByText("Isi");
+    await screen.findAllByRole("navigation", { name: "Menu admin" });
     const labels = within(sidebar())
       .getAllByRole("link")
       .map((link) => link.textContent);
@@ -71,7 +79,7 @@ describe("AdminShell", () => {
   it("shows every menu to a Super Admin", async () => {
     renderShell(superAdminFixture);
 
-    await screen.findByText("Isi");
+    await screen.findAllByRole("navigation", { name: "Menu admin" });
     expect(within(sidebar()).getByRole("link", { name: "Log Audit" })).toHaveAttribute(
       "href",
       "/admin/log-audit",
@@ -90,7 +98,7 @@ describe("AdminShell", () => {
   it("collapses the sidebar, keeps accessible names and remembers it", async () => {
     const user = userEvent.setup();
     renderShell(staffFixture);
-    await screen.findByText("Isi");
+    await screen.findAllByRole("navigation", { name: "Menu admin" });
 
     await user.click(screen.getByRole("button", { name: "Ciutkan sidebar" }));
 
@@ -116,7 +124,7 @@ describe("AdminShell", () => {
         <p>Isi</p>
       </AdminShell>,
     );
-    await screen.findByText("Isi");
+    await screen.findAllByRole("navigation", { name: "Menu admin" });
 
     // The in-memory fallback may still hold an earlier test's value: assert that the toggle flips.
     const toggle = screen.getByRole("button", { name: /sidebar$/ });
