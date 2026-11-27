@@ -15,6 +15,7 @@ import {
   Checkbox,
   Chip,
   DateRangePicker,
+  RangeSlider,
   Dialog,
   DialogClose,
   DialogContent,
@@ -118,6 +119,7 @@ export function Gallery() {
   const [chips, setChips] = useState({ suv: true, mpv: false, matic: false });
   const [range, setRange] = useState<DateRangeValue>({ pickupAt: null, returnAt: null });
   const [file, setFile] = useState<File | null>(null);
+  const [price, setPrice] = useState<[number, number]>([300000, 1500000]);
   const [page, setPage] = useState(1);
   const [step, setStep] = useState(2);
 
@@ -287,6 +289,23 @@ export function Gallery() {
         </Field>
         <p className="text-body-sm text-text-muted tabular">
           Nilai: {range.pickupAt ?? "—"} → {range.returnAt ?? "—"}
+        </p>
+      </Section>
+
+      <Section id="range" title="Slider rentang">
+        <Field label="Harga per hari">
+          <RangeSlider
+            min={100000}
+            max={3000000}
+            step={50000}
+            value={price}
+            onValueChange={setPrice}
+            thumbLabels={["Harga minimum", "Harga maksimum"]}
+            formatValue={formatRupiah}
+          />
+        </Field>
+        <p className="text-body-sm text-text-muted tabular">
+          {formatRupiah(price[0])} – {formatRupiah(price[1])}
         </p>
       </Section>
 

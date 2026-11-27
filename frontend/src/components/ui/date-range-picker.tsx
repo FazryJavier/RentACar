@@ -9,6 +9,7 @@ import { formatDateWib } from "@/lib/format";
 import {
   buildTimeSlots,
   dateKeyToNoon,
+  fromIso,
   toDateKey,
   toWibIso,
   WIB_TIME_ZONE,
@@ -34,6 +35,10 @@ export type DateRangePickerProps = {
   defaultPickupTime?: string;
   defaultReturnTime?: string;
   placeholder?: string;
+  /** Range shown initially (e.g. restored from the URL); `onChange` is not called on mount. */
+  defaultValue?: DateRangeValue;
+  /** Non-interactive trigger (e.g. until a branch is chosen). */
+  disabled?: boolean;
   size?: "md" | "sm";
   className?: string;
 };
@@ -55,6 +60,8 @@ export function DateRangePicker({
   defaultPickupTime,
   defaultReturnTime,
   placeholder = "Pilih tanggal ambil & kembali",
+  defaultValue,
+  disabled = false,
   size = "md",
   className,
 }: DateRangePickerProps) {
@@ -63,9 +70,17 @@ export function DateRangePicker({
   const options = useMemo(() => slots.map((slot) => ({ value: slot, label: slot })), [slots]);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
-  const [state, setState] = useState<State>({
-    pickupTime: defaultPickupTime ?? slots[0] ?? openTime,
-    returnTime: defaultReturnTime ?? slots[0] ?? openTime,
+  const [state, setState] = useState<State>(() => {
+    const pickup = fromIso(defaultValue?.pickupAt);
+    const back = fromIso(defaultValue?.returnAt);
+    const slot = (time: string | undefined, fallback: string | undefined) =>
+      time !== undefined && slots.includes(time) ? time : (fallback ?? slots[0] ?? openTime);
+    return {
+      from: pickup?.key,
+      to: back && back.key !== pickup?.key ? back.key : undefined,
+      pickupTime: slot(pickup?.time, defaultPickupTime),
+      returnTime: slot(back?.time, defaultReturnTime),
+    };
   });
 
   const disabledSet = useMemo(() => new Set(disabledDates), [disabledDates]);
@@ -103,14 +118,17 @@ export function DateRangePicker({
     : placeholder;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open && !disabled} onOpenChange={(next) => setOpen(next && !disabled)}>
       <PopoverTrigger
         ref={triggerRef}
         {...field}
+        disabled={disabled}
+        aria-disabled={disabled || undefined}
         className={cn(
           controlVariants({ size }),
           "flex items-center gap-2 text-left",
           state.from ? null : "text-text-subtle",
+          disabled ? "bg-surface-muted text-text-muted cursor-not-allowed" : null,
           className,
         )}
       >

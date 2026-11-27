@@ -77,6 +77,8 @@ describe("DateRangePicker", () => {
         returnAt: "2026-11-26T09:00:00+07:00",
       });
     },
+    // Two hour listboxes with ~30 options each: slow on Windows when the whole suite runs in parallel.
+    30_000,
   );
 
   it("disables dates before minDate and listed dates", async () => {
@@ -127,5 +129,32 @@ describe("DateRangePicker", () => {
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("grid")).not.toBeInTheDocument());
     await waitFor(() => expect(trigger).toHaveFocus());
+  });
+});
+
+describe("DateRangePicker initial value and disabled state", () => {
+  it("shows a restored range without reporting a change", () => {
+    const onChange = renderPicker(vi.fn(), {
+      defaultValue: {
+        pickupAt: "2026-12-03T09:00:00+07:00",
+        returnAt: "2026-12-05T17:30:00+07:00",
+      },
+    });
+
+    expect(
+      screen.getByRole("button", { name: /3 Des 2026 09:00 – .*5 Des 2026 17:30/ }),
+    ).toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("does not open when disabled", async () => {
+    vi.useRealTimers();
+    renderPicker(vi.fn(), { disabled: true, placeholder: "Pilih cabang dulu" });
+    const trigger = screen.getByRole("button", { name: "Pilih cabang dulu" });
+
+    await userEvent.setup().click(trigger);
+
+    expect(trigger).toBeDisabled();
+    expect(screen.queryByRole("grid")).not.toBeInTheDocument();
   });
 });
