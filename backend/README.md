@@ -115,6 +115,22 @@ Sanctum SPA (cookie sesi + CSRF) di origin yang sama dengan frontend. Guard `web
 - Lokal `MAIL_MAILER=log`: tautan atur ulang ada di `storage/logs/laravel.log`.
 - Koneksi PostgreSQL memakai zona waktu sesi `UTC` (`config/database.php`), sehingga `timestamptz` selalu benar apa pun zona waktu server.
 
+## API publik: katalog, ketersediaan, harga
+
+| Endpoint (`/api/v1/public`) | Keterangan |
+|---|---|
+| `GET /cars` | Tanpa tanggal: semua mobil aktif (`estimate: null`, bisa `branch=<slug>`). Dengan `branch` + `pickup_at` + `return_at`: hanya mobil tersedia di cabang itu, masing-masing dengan `estimate`. Filter `filter[category]`, `filter[brand]` (slug, daftar), `filter[transmission]`, `filter[seats_min]`, `filter[fuel_type]`, `filter[price_min]`/`filter[price_max]`; sortir `popular` (default), `price`, `-price`, `-newest`; `per_page` 12/24/48 |
+| `GET /cars/{slug}` | Detail publik: spesifikasi, foto (`srcset`), model 3D + kredit, penanda kondisi aktif saja, ringkasan inspeksi. Tanpa ID, plat, GPS |
+| `GET /cars/{slug}/availability` | `available`, `reason` (`booked`/`other_branch`/`unavailable`/`null`), `price`, `price_token` |
+| `GET /cars/{slug}/similar` | Maksimal 4 mobil satu kategori dengan harga terdekat (dengan tanggal: hanya yang tersedia) |
+| `GET /branches`, `/categories`, `/brands` | Daftar referensi (cabang aktif) |
+
+- **Jadwal sewa** (`App\Domain\Booking\RentalWindowValidator`, nilai dari tabel `settings`): ambil ≥ sekarang + 2 jam dan ≤ 90 hari, menit :00/:30, di dalam jam operasional cabang (WIB), durasi 1–30 hari. Waktu tanpa offset dibaca sebagai WIB. Error 422: `required`, `invalid_format`, `too_soon`, `too_far`, `invalid_slot`, `outside_operating_hours`, `duration_out_of_range`.
+- **Ketersediaan** (`AvailabilityQuery`): mobil aktif di cabang itu tanpa pemesanan penahan jadwal (menunggu bayar yang belum lewat batas, menunggu verifikasi, dikonfirmasi, berjalan) yang bentrok dengan `[ambil, kembali + jeda 2 jam)` — ekspresi sama dengan constraint `bookings_no_overlap`.
+- **Harga** (`PriceCalculator`): `hari = max(1, ceil(menit / 1440))`, total = hari × harga/hari + deposit. `price_token` = HMAC (kunci turunan `APP_KEY`) atas mobil, cabang, waktu, dan semua angka harga; dipakai saat membuat pemesanan.
+- **Cache:** respons tanpa tanggal `public, max-age=60, stale-while-revalidate=300`; dengan tanggal/ketersediaan `no-store`. Rate limit 60/menit per IP.
+- **Ukur performa lokal:** `php artisan rentacar:measure-catalog --cars=60 --bookings=600 --runs=50` (hanya `local`/`testing`; data dibuat dalam transaksi lalu dibatalkan).
+
 ## Admin panel: autentikasi, peran, cakupan cabang
 
 Guard `admin` (tabel `admins`) terpisah dari guard pelanggan `web`; password broker `admins`. Aturan login, batas percobaan, atur ulang, dan ubah kata sandi sama dengan pelanggan. Admin nonaktif → 403 `account_blocked`; admin terhapus → 401.

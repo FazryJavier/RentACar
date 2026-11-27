@@ -21,6 +21,8 @@ use App\Http\Controllers\Api\V1\Auth\RegisterController;
 use App\Http\Controllers\Api\V1\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\MeController;
+use App\Http\Controllers\Api\V1\Public\PublicCarController;
+use App\Http\Controllers\Api\V1\Public\PublicReferenceController;
 use App\Http\Middleware\EnsureAdminActive;
 use App\Http\Middleware\EnsureCustomerNotBlocked;
 use Illuminate\Support\Facades\Route;
@@ -36,6 +38,18 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::get('health', HealthController::class)
         ->middleware('throttle:public')
         ->name('health');
+
+    // Public catalog, availability and prices (no login). Rate limited per IP; date-independent
+    // responses are briefly cacheable, everything with dates is `no-store`.
+    Route::prefix('public')->name('public.')->middleware('throttle:public')->group(function (): void {
+        Route::get('branches', [PublicReferenceController::class, 'branches'])->name('branches');
+        Route::get('categories', [PublicReferenceController::class, 'categories'])->name('categories');
+        Route::get('brands', [PublicReferenceController::class, 'brands'])->name('brands');
+        Route::get('cars', [PublicCarController::class, 'index'])->name('cars.index');
+        Route::get('cars/{slug}', [PublicCarController::class, 'show'])->name('cars.show');
+        Route::get('cars/{slug}/availability', [PublicCarController::class, 'availability'])->name('cars.availability');
+        Route::get('cars/{slug}/similar', [PublicCarController::class, 'similar'])->name('cars.similar');
+    });
 
     // Customer authentication (guard `web`). Login counts failed attempts itself
     // (5 per minute per IP + email); `public` is only a coarse flood guard.

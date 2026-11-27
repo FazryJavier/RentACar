@@ -58,7 +58,9 @@ final class Browser
                 continue; // Not needed: requests are same-origin (Sec-Fetch-Site).
             }
 
-            if ($cookie->isCleared()) {
+            // Compare with the test clock (travelTo), not the real one that Cookie::isCleared() uses.
+            $expires = $cookie->getExpiresTime();
+            if ($expires !== 0 && $expires < now()->getTimestamp()) {
                 unset($this->cookies[$cookie->getName()]);
 
                 continue;
