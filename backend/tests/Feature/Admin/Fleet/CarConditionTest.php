@@ -73,8 +73,6 @@ describe('create', function () {
 
     it('uses the WIB date for the inspection date', function () {
         $this->travelTo(now()->setTimezone('UTC')->setDate(2026, 11, 26)->setTime(23, 30));
-        // Sign in again at the new time (the session started before the time travel).
-        $this->browser = AdminBrowsers::login($this, $this->admin);
 
         $this->browser->post("/api/v1/admin/cars/{$this->car->id}/conditions", markerPayload(['inspected_on' => '2026-11-27']))->assertCreated();
         $this->browser->post("/api/v1/admin/cars/{$this->car->id}/conditions", markerPayload(['inspected_on' => '2026-11-28']))

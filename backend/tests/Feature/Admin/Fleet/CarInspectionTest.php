@@ -17,8 +17,6 @@ beforeEach(function () {
 
 it('records an inspection and updates the car', function () {
     $this->travelTo(now()->setDate(2026, 11, 27));
-    // Sign in again at the new time (the session started before the time travel).
-    $this->browser = AdminBrowsers::login($this, $this->admin);
 
     $this->browser->post($this->url, ['inspected_at' => '2026-11-26T09:00:00+07:00', 'odometer_km' => 45000, 'notes' => 'Ban depan diganti'])
         ->assertCreated()
@@ -34,8 +32,6 @@ it('records an inspection and updates the car', function () {
 
 it('keeps the latest date and highest odometer for older inspections', function () {
     $this->travelTo(now()->setDate(2026, 11, 27));
-    // Sign in again at the new time (the session started before the time travel).
-    $this->browser = AdminBrowsers::login($this, $this->admin);
     $this->browser->post($this->url, ['inspected_at' => '2026-11-26T09:00:00+07:00', 'odometer_km' => 45000])->assertCreated();
 
     $this->browser->post($this->url, ['inspected_at' => '2026-11-01T09:00:00+07:00', 'odometer_km' => 41000])->assertCreated();
