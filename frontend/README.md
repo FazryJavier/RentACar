@@ -19,6 +19,7 @@ src/app/              Routing (App Router)
   providers.tsx       QueryClient (TanStack Query) + ToastProvider untuk seluruh aplikasi
   dev/ui/             Galeri komponen (hanya development)
 src/components/layout/ SiteShell, Header, MobileMenu, DemoBanner, Footer, NewsletterForm
+src/components/fleet/ Halaman armada: SearchForm, CarCard, FilterPanel/FilterSheet, FleetResults
 src/components/ui/    Komponen dasar (Button, Field, Select, DateRangePicker, Dialog, Toast, ...)
 src/styles/tokens.css Token warna, tipografi, spacing, radius, shadow, z-index, breakpoint, motion
 src/lib/              cn(), apiGet/ApiError, format Rupiah/WIB, helper tanggal WIB, navigasi
@@ -34,6 +35,14 @@ next.config.ts        Rewrite /api, /sanctum, /docs, /storage → Laravel (BACKE
 - **API:** `apiGet<T>("/me")` memanggil `/api/v1/me` di origin yang sama (cookie Sanctum), mengembalikan `data` dari envelope, dan melempar `ApiError` (`status`, `message`, `errors`) bila gagal.
 - **Sesi pelanggan:** `useCurrentCustomer()` → `{ status: "loading" | "guest" | "signed-in", customer }`. 401/404 dianggap tamu; header menampilkan "Masuk" atau nama pelanggan.
 - **Banner demo** disembunyikan per sesi browser (`sessionStorage`), tetap berfungsi jika storage diblokir.
+
+## Halaman armada (`/armada`)
+
+- **URL = state.** Kunci yang dibaca (`src/lib/fleet-params.ts`): `branch`, `pickup_at`, `return_at` (ISO dengan offset), `category`, `brand`, `fuel_type` (daftar dipisah koma), `transmission`, `seats_min`, `price_min`, `price_max`, `sort` (`popular` bawaan, `price`, `-price`, `-newest`), `page`, `per_page` (12/24/48), `view` (`grid`/`list`). Nilai yang tidak dikenal atau rusak diabaikan; nilai bawaan tidak ditulis ke URL. Modul yang sama mengubahnya ke query API (`filter[category]=suv,mpv`, …). Tanggal hanya dikirim bila cabang + kedua tanggal ada.
+- **Render:** `app/(public)/armada/page.tsx` mem-prefetch hasil di server (di dalam `Suspense`, `connection()`), lalu `HydrationBoundary` → `FleetPage` (klien) melanjutkan dengan TanStack Query (`keepPreviousData`, `staleTime` 30 dtk). Setiap perubahan pencarian/filter/sortir/halaman/tampilan memakai `router.push(…, { scroll: false })` sehingga Back/Forward memulihkan keadaan sebelumnya. Daftar cabang/kategori/merek di-cache lintas pengunjung (`"use cache"`, `cacheLife("minutes")`).
+- **IP pengunjung:** permintaan dari server Next.js ke `BACKEND_URL` meneruskan `X-Forwarded-For` (dari header permintaan masuk) agar batas laju publik 60/menit tetap per pengunjung. Saat deploy, reverse proxy wajib meneruskan header ini dan Laravel harus mempercayai host Next.js.
+- **Layout:** filter di sidebar mulai 1024 px; di bawahnya lewat bottom sheet "Filter (n)" yang baru diterapkan saat "Terapkan". Grid 1/2/3 kolom (0/600/1024 px); tombol grid/daftar tampil mulai 600 px. Gagal 422 dari API (mis. tanggal terlalu dekat) ditampilkan di field form cari.
+- E2E `tests/e2e/fleet.spec.ts` butuh backend + seed dengan minimal satu mobil aktif (dilewati bila katalog kosong).
 
 ## Akun pelanggan
 

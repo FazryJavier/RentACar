@@ -30,6 +30,8 @@ export type { InputProps, TextareaProps } from "./input";
 export { Pagination, paginationItems } from "./pagination";
 export type { PaginationProps } from "./pagination";
 export { Popover, PopoverContent, PopoverTrigger } from "./popover";
+export { RangeSlider } from "./range-slider";
+export type { RangeSliderProps } from "./range-slider";
 export { Select } from "./select";
 export type { SelectOption, SelectProps } from "./select";
 export { Spinner } from "./spinner";

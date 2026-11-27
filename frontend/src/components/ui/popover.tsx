@@ -11,6 +11,7 @@ export function PopoverContent({
   className,
   align = "start",
   sideOffset = 8,
+  collisionPadding = 8,
   ...props
 }: ComponentPropsWithRef<typeof PopoverPrimitive.Content>) {
   return (
@@ -19,8 +20,11 @@ export function PopoverContent({
         {...props}
         align={align}
         sideOffset={sideOffset}
+        collisionPadding={collisionPadding}
         className={cn(
           "border-border bg-surface z-(--z-dropdown) rounded-lg border p-4 shadow-lg",
+          // Short screens: stay inside the viewport and scroll instead of overflowing it.
+          "max-h-(--radix-popover-content-available-height) overflow-y-auto",
           "motion-safe:data-[state=open]:animate-slide-in motion-reduce:data-[state=open]:animate-fade-in",
           className,
         )}

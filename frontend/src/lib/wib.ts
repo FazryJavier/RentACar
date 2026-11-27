@@ -41,6 +41,25 @@ export function toWibIso(key: DateKey, time: string): string {
   return `${key}T${time}:00${WIB_OFFSET}`;
 }
 
+const timeFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: WIB_TIME_ZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+/** "2026-12-03T02:00:00Z" → { key: "2026-12-03", time: "09:00" } in WIB; null when invalid. */
+export function fromIso(value: string | null | undefined): { key: DateKey; time: string } | null {
+  if (!value) {
+    return null;
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return { key: toDateKey(date), time: timeFormatter.format(date) };
+}
+
 function minutes(time: string): number {
   const match = TIME.exec(time);
 

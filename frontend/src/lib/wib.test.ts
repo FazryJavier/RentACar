@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { buildTimeSlots, dateKeyToNoon, toDateKey, toWibIso } from "./wib";
+import { buildTimeSlots, dateKeyToNoon, fromIso, toDateKey, toWibIso } from "./wib";
 
 const originalTz = process.env.TZ;
 
@@ -43,5 +43,18 @@ describe("WIB date keys", () => {
     expect(toWibIso("2026-11-24", "09:00")).toBe("2026-11-24T09:00:00+07:00");
     expect(() => toWibIso("2026-11-24", "9:00")).toThrow(RangeError);
     expect(() => dateKeyToNoon("24-11-2026")).toThrow(RangeError);
+  });
+});
+
+describe("fromIso", () => {
+  it("returns the WIB date and time of an instant", () => {
+    expect(fromIso("2026-12-03T02:00:00Z")).toEqual({ key: "2026-12-03", time: "09:00" });
+    expect(fromIso("2026-12-03T23:30:00+07:00")).toEqual({ key: "2026-12-03", time: "23:30" });
+    expect(fromIso("2026-12-03T17:30:00Z")).toEqual({ key: "2026-12-04", time: "00:30" });
+  });
+
+  it("returns null for missing or invalid values", () => {
+    expect(fromIso(null)).toBeNull();
+    expect(fromIso("besok")).toBeNull();
   });
 });
