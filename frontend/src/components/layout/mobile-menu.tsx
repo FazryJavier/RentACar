@@ -2,7 +2,6 @@
 
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { useState } from "react";
 import { Button, IconButton } from "@/components/ui";
@@ -12,8 +11,7 @@ import { Logo } from "./logo";
 import { NavItem } from "./nav-link";
 
 /** Full-screen navigation panel below 1024px (focus trapped, Esc closes, closes on navigation). */
-export function MobileMenu() {
-  const pathname = usePathname();
+export function MobileMenu({ pathname }: { pathname: string | null }) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
 
@@ -46,7 +44,7 @@ export function MobileMenu() {
                   <NavItem
                     href={item.href}
                     label={item.label}
-                    active={isActivePath(pathname, item.href)}
+                    active={pathname !== null && isActivePath(pathname, item.href)}
                     variant="mobile"
                     onNavigate={close}
                   />

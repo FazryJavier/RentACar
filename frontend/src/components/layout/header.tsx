@@ -16,7 +16,14 @@ export const HEADER_SOLID_AFTER_PX = 24;
 
 /** Sticky site header: transparent over the home hero, solid elsewhere or once scrolled. */
 export function Header() {
-  const pathname = usePathname();
+  return <HeaderView pathname={usePathname()} />;
+}
+
+/**
+ * Header markup for a known path, or `null` while the path is not known yet (Suspense fallback on
+ * routes with dynamic params under Cache Components): solid, with no active menu item.
+ */
+export function HeaderView({ pathname }: { pathname: string | null }) {
   const scrolled = useScrolledPast(HEADER_SOLID_AFTER_PX);
   const solid = pathname !== "/" || scrolled;
 
@@ -37,7 +44,7 @@ export function Header() {
                 <NavItem
                   href={item.href}
                   label={item.label}
-                  active={isActivePath(pathname, item.href)}
+                  active={pathname !== null && isActivePath(pathname, item.href)}
                   variant="desktop"
                 />
               </li>
@@ -53,7 +60,7 @@ export function Header() {
             <Link href="/armada">Sewa</Link>
           </Button>
           <div className="lg:hidden">
-            <MobileMenu />
+            <MobileMenu pathname={pathname} />
           </div>
         </div>
       </div>

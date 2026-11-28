@@ -1,16 +1,16 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { Component, useEffect, useState, type ReactNode } from "react";
+import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { Skeleton } from "@/components/ui";
 import type { CarViewerProps } from "./types";
 
-export type { CarViewerProps, ViewerApi, ViewerCamera, ViewerHotspot } from "./types";
+export type { CarViewerProps, ViewerApi, ViewerCamera, ViewerHotspot, ViewPreset } from "./types";
 
-const Scene = dynamic(() => import("./car-viewer-scene"), {
-  ssr: false,
-  loading: () => <Skeleton className="h-80 w-full rounded-xl md:h-120" />,
-});
+// Rendered only after a client-side WebGL check, so the three.js chunk never loads on the server
+// or on devices without WebGL.
+const Scene = lazy(() => import("./car-viewer-scene"));
+
+const skeleton = <Skeleton className="h-80 w-full rounded-xl md:h-120" />;
 
 /** WebGL availability (false on the server and in browsers or devices without it). */
 export function hasWebGL(): boolean {
@@ -45,7 +45,11 @@ class ViewerBoundary extends Component<
  * 3D car viewer: client-only, lazy-loaded three.js scene with hotspots; shows `fallback`
  * (gallery or text) when WebGL is missing or the model cannot be loaded.
  */
-export function CarViewer({ fallback, ...props }: CarViewerProps & { fallback: ReactNode }) {
+export function CarViewer({
+  fallback,
+  placeholder = skeleton,
+  ...props
+}: CarViewerProps & { fallback: ReactNode; placeholder?: ReactNode }) {
   const [supported, setSupported] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -55,7 +59,7 @@ export function CarViewer({ fallback, ...props }: CarViewerProps & { fallback: R
   }, []);
 
   if (supported === null) {
-    return <Skeleton className="h-80 w-full rounded-xl md:h-120" />;
+    return <>{placeholder}</>;
   }
   if (!supported) {
     return <>{fallback}</>;
@@ -63,7 +67,41 @@ export function CarViewer({ fallback, ...props }: CarViewerProps & { fallback: R
 
   return (
     <ViewerBoundary key={props.url} fallback={fallback}>
-      <Scene {...props} />
+      <Suspense fallback={placeholder}>
+        <Scene {...props} />
+      </Suspense>
     </ViewerBoundary>
   );
+}
+
+/**
+ * Customer viewer: shows `placeholder` (the poster) until the area is near the viewport, then
+ * mounts `CarViewer`. Without IntersectionObserver the viewer mounts at once.
+ */
+export function LazyCarViewer(
+  props: CarViewerProps & { fallback: ReactNode; placeholder: ReactNode },
+) {
+  const area = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const element = area.current;
+    if (!element || typeof IntersectionObserver === "undefined") {
+      setVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  return <div ref={area}>{visible ? <CarViewer {...props} /> : props.placeholder}</div>;
 }

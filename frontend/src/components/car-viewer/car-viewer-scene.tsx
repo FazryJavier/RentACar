@@ -2,19 +2,44 @@
 
 import { Bounds, OrbitControls, useGLTF, useProgress } from "@react-three/drei";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { Suspense, useEffect, useRef, type RefObject } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type RefObject,
+} from "react";
 import { Raycaster, Vector3, type Object3D } from "three";
 import { Badge } from "@/components/ui";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { cn } from "@/lib/cn";
 import { isDrag, toModelSpace } from "@/lib/three/model-space";
-import { SEVERITY_CLASS, type CarViewerProps, type ViewerHotspot } from "./types";
+import {
+  CAMERA_LIMITS,
+  dolly,
+  easeOut,
+  modelBox,
+  orbit,
+  poseFromCamera,
+  presetPose,
+  type CameraPose,
+} from "./camera-rig";
+import { ViewerControls } from "./viewer-controls";
+import { SEVERITY_CLASS, type CarViewerProps, type ViewerApi, type ViewerHotspot } from "./types";
 
 /** Draco decoder copied to public/draco by scripts/copy-draco.mjs (never a CDN). */
 const DRACO_PATH = "/draco/";
 const DEFAULT_CAMERA: [number, number, number] = [4, 2, 5];
 
-type OrbitControlsLike = { target: { x: number; y: number; z: number } };
+type OrbitControlsLike = {
+  target: Vector3;
+  update: () => void;
+};
+const TWEEN_MS = 300;
+const ROTATE_STEP = Math.PI / 18;
+const ZOOM_STEP = 0.85;
 type HotspotElements = RefObject<Map<number, HTMLButtonElement>>;
 
 /**
@@ -67,14 +92,18 @@ function Model({
   elements,
   placing,
   onPlace,
+  onLoaded,
 }: Pick<CarViewerProps, "placing" | "onPlace"> & {
   url: string;
   hotspots: ViewerHotspot[];
   elements: HotspotElements;
+  onLoaded: () => void;
 }) {
   const { scene } = useGLTF(url, DRACO_PATH, true);
   const down = useRef<{ x: number; y: number } | null>(null);
   const invalidate = useThree((state) => state.invalidate);
+
+  useEffect(() => onLoaded(), [scene, onLoaded]);
 
   // Re-render once so new or moved hotspots are projected immediately (frameloop is "demand").
   useEffect(() => invalidate(), [hotspots, invalidate]);
@@ -104,18 +133,66 @@ function Model({
   );
 }
 
-/** Exposes camera reading and poster capture to the editor. */
-function ApiBridge({ onReady }: Pick<CarViewerProps, "onReady">) {
-  const { camera, controls, gl, scene } = useThree();
+/**
+ * Exposes the viewer API: camera reading and poster capture (editor) and navigation (customer).
+ * Camera moves are tweened over a few frames, or applied at once under reduced motion.
+ */
+function ApiBridge({
+  onReady,
+  saved,
+  reducedMotion,
+  elements,
+}: Pick<CarViewerProps, "onReady"> & {
+  saved: CarViewerProps["camera"];
+  reducedMotion: boolean;
+  elements: HotspotElements;
+}) {
+  const { camera, controls, gl, scene, invalidate } = useThree();
+  const tween = useRef<{ from: CameraPose; to: CameraPose; start: number } | null>(null);
+
+  useFrame(() => {
+    const orbitControls = controls as unknown as OrbitControlsLike | null;
+    const current = tween.current;
+    if (!current || !orbitControls) {
+      return;
+    }
+    const progress = Math.min(1, (performance.now() - current.start) / TWEEN_MS);
+    const k = easeOut(progress);
+    camera.position.lerpVectors(current.from.position, current.to.position, k);
+    orbitControls.target.lerpVectors(current.from.target, current.to.target, k);
+    orbitControls.update();
+    if (progress < 1) {
+      invalidate();
+    } else {
+      tween.current = null;
+    }
+  });
 
   useEffect(() => {
-    onReady?.({
+    const orbitControls = () => controls as unknown as OrbitControlsLike | null;
+    const pose = (): CameraPose => ({
+      position: camera.position.clone(),
+      target: orbitControls()?.target.clone() ?? new Vector3(),
+    });
+    const moveTo = (to: CameraPose, animate: boolean) => {
+      const target = orbitControls();
+      if (!target) {
+        return;
+      }
+      if (animate && !reducedMotion) {
+        tween.current = { from: pose(), to, start: performance.now() };
+      } else {
+        tween.current = null;
+        camera.position.copy(to.position);
+        target.target.copy(to.target);
+        target.update();
+      }
+      invalidate();
+    };
+
+    const api: ViewerApi = {
       getCamera: () => {
-        const target = (controls as unknown as OrbitControlsLike | null)?.target ?? {
-          x: 0,
-          y: 0,
-          z: 0,
-        };
+        const target = orbitControls()?.target ?? { x: 0, y: 0, z: 0 };
         const round = (value: number) => Math.round(value * 1000) / 1000;
         return {
           position: [round(camera.position.x), round(camera.position.y), round(camera.position.z)],
@@ -127,8 +204,21 @@ function ApiBridge({ onReady }: Pick<CarViewerProps, "onReady">) {
           gl.render(scene, camera);
           gl.domElement.toBlob((blob) => resolve(blob), "image/webp", 0.9);
         }),
-    });
-  }, [camera, controls, gl, scene, onReady]);
+      setView: (preset) => moveTo(presetPose(modelBox(scene), preset), true),
+      reset: () =>
+        moveTo(saved ? poseFromCamera(saved) : presetPose(modelBox(scene), "default"), true),
+      zoom: (factor) => {
+        const current = pose();
+        moveTo({ position: dolly(current, factor), target: current.target }, false);
+      },
+      rotate: (azimuth, polar) => {
+        const current = pose();
+        moveTo({ position: orbit(current, azimuth, polar), target: current.target }, false);
+      },
+      focusHotspot: (id) => elements.current.get(id)?.focus(),
+    };
+    onReady?.(api);
+  }, [camera, controls, gl, scene, invalidate, onReady, saved, reducedMotion, elements]);
 
   return null;
 }
@@ -145,22 +235,94 @@ export default function CarViewerScene({
   placing = false,
   onPlace,
   onReady,
+  controls = false,
+  label,
+  posterUrl,
 }: CarViewerProps) {
   const reducedMotion = useReducedMotion();
   const elements = useRef(new Map<number, HTMLButtonElement>());
+  const container = useRef<HTMLDivElement>(null);
+  const api = useRef<ViewerApi | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [hint, setHint] = useState(controls);
   const { active, progress } = useProgress();
   const ordered = [...hotspots].sort((a, b) => a.number - b.number);
-  const model = (
-    <Model url={url} hotspots={ordered} elements={elements} placing={placing} onPlace={onPlace} />
+  const handleLoaded = useCallback(() => setLoaded(true), []);
+  const handleReady = useCallback(
+    (viewer: ViewerApi) => {
+      api.current = viewer;
+      onReady?.(viewer);
+    },
+    [onReady],
   );
+  const model = (
+    <Model
+      url={url}
+      hotspots={ordered}
+      elements={elements}
+      placing={placing}
+      onPlace={onPlace}
+      onLoaded={handleLoaded}
+    />
+  );
+
+  useEffect(() => {
+    if (!hint) {
+      return;
+    }
+    const timer = window.setTimeout(() => setHint(false), 4000);
+    return () => window.clearTimeout(timer);
+  }, [hint]);
+
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (!controls || event.target !== event.currentTarget || !api.current) {
+      return;
+    }
+    const actions: Record<string, () => void> = {
+      ArrowLeft: () => api.current?.rotate(ROTATE_STEP, 0),
+      ArrowRight: () => api.current?.rotate(-ROTATE_STEP, 0),
+      ArrowUp: () => api.current?.rotate(0, -ROTATE_STEP),
+      ArrowDown: () => api.current?.rotate(0, ROTATE_STEP),
+      "+": () => api.current?.zoom(ZOOM_STEP),
+      "=": () => api.current?.zoom(ZOOM_STEP),
+      "-": () => api.current?.zoom(1 / ZOOM_STEP),
+    };
+    const action = actions[event.key];
+    if (action) {
+      event.preventDefault();
+      setHint(false);
+      action();
+    }
+  }
 
   return (
     <div
+      ref={container}
+      tabIndex={controls ? 0 : undefined}
+      role={controls ? "group" : undefined}
+      aria-roledescription={controls ? "penampil 3D" : undefined}
+      aria-label={
+        controls
+          ? `Model 3D ${label ?? "mobil"}. Panah untuk memutar, plus dan minus untuk zoom.`
+          : undefined
+      }
+      onKeyDown={handleKeyDown}
+      onPointerDown={() => setHint(false)}
       className={cn(
-        "from-surface to-bg relative h-80 w-full overflow-hidden rounded-xl bg-linear-to-b md:h-120",
+        "from-surface to-bg focus-visible:focus-ring relative h-80 w-full overflow-hidden rounded-xl bg-linear-to-b md:h-120",
+        "data-[fullscreen=true]:h-screen data-[fullscreen=true]:rounded-none",
         placing ? "cursor-crosshair" : "cursor-grab",
       )}
     >
+      {posterUrl && !loaded ? (
+        // eslint-disable-next-line @next/next/no-img-element -- poster from /storage while the model loads
+        <img
+          src={posterUrl}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 size-full object-contain"
+        />
+      ) : null}
       <Canvas
         frameloop="demand"
         dpr={[1, 1.5]}
@@ -184,9 +346,15 @@ export default function CarViewerScene({
           makeDefault
           target={camera?.target}
           enableDamping={!reducedMotion}
-          maxDistance={50}
+          minDistance={CAMERA_LIMITS.min}
+          maxDistance={CAMERA_LIMITS.max}
         />
-        <ApiBridge onReady={onReady} />
+        <ApiBridge
+          onReady={handleReady}
+          saved={camera}
+          reducedMotion={reducedMotion}
+          elements={elements}
+        />
       </Canvas>
 
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -206,12 +374,21 @@ export default function CarViewerScene({
             onClick={() => onSelect?.(hotspot.id)}
             style={{ visibility: "hidden" }}
             className={cn(
-              "text-caption text-text-on-dark focus-visible:focus-ring ring-surface pointer-events-auto absolute top-0 left-0 inline-flex size-7 items-center justify-center rounded-full font-bold shadow-md ring-2",
+              "text-caption text-text-on-dark focus-visible:focus-ring ring-surface pointer-events-auto absolute top-0 left-0 isolate inline-flex size-7 items-center justify-center rounded-full font-bold shadow-md ring-2",
               "data-[occluded=true]:opacity-40",
               SEVERITY_CLASS[hotspot.severity],
               hotspot.id === selectedId ? "ring-accent ring-4" : null,
             )}
           >
+            {controls ? (
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "motion-safe:animate-ping-soft absolute inset-0 -z-10 rounded-full",
+                  SEVERITY_CLASS[hotspot.severity],
+                )}
+              />
+            ) : null}
             {hotspot.number}
           </button>
         ))}
@@ -219,8 +396,11 @@ export default function CarViewerScene({
 
       {active ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <span className="text-body-sm text-text-muted bg-surface rounded-full px-3 py-1 shadow-sm">
-            Memuat model… {Math.round(progress)}%
+          <span
+            role="status"
+            className="text-body-sm text-text-muted bg-surface rounded-full px-3 py-1 shadow-sm"
+          >
+            Memuat model 3D… {Math.round(progress)}%
           </span>
         </div>
       ) : null}
@@ -229,6 +409,14 @@ export default function CarViewerScene({
           Model ilustrasi
         </Badge>
       ) : null}
+      {controls && hint && loaded ? (
+        <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center">
+          <span className="text-caption text-text bg-surface/90 rounded-full px-3 py-1 shadow-sm">
+            Geser untuk memutar
+          </span>
+        </div>
+      ) : null}
+      {controls ? <ViewerControls api={api} container={container} disabled={!loaded} /> : null}
     </div>
   );
 }

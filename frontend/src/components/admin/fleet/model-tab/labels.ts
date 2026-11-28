@@ -1,21 +1,4 @@
-import type { BadgeTone } from "@/components/ui";
-import type { ConditionArea, ConditionSeverity } from "@/lib/admin-api";
-
-export const AREA_LABEL: Record<ConditionArea, string> = {
-  front: "Depan",
-  rear: "Belakang",
-  left: "Kiri",
-  right: "Kanan",
-  roof: "Atap",
-  interior: "Interior",
-  wheel: "Roda",
-};
-
-export const SEVERITY: Record<ConditionSeverity, { label: string; tone: BadgeTone }> = {
-  minor: { label: "Ringan", tone: "success" },
-  moderate: { label: "Sedang", tone: "warning" },
-  major: { label: "Berat", tone: "danger" },
-};
+export { AREA_LABEL, SEVERITY } from "@/lib/condition-labels";
 
 /** Today in WIB as `YYYY-MM-DD` (call after mount, not during render). */
 export function todayWib(): string {

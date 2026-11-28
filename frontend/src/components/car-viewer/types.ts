@@ -13,11 +13,22 @@ export type ViewerHotspot = {
 
 export type ViewerCamera = { position: Vec3; target: Vec3 };
 
-/** Controls the editor needs from a mounted viewer. */
+export type ViewPreset = "front" | "side" | "back" | "interior";
+
+/** Controls a mounted viewer exposes (editor: camera + poster; customer: navigation). */
 export type ViewerApi = {
   getCamera: () => ViewerCamera;
   /** Renders the current view and returns it as an image (poster), or null if unsupported. */
   capturePoster: () => Promise<Blob | null>;
+  /** Moves the camera to a preset computed from the model's bounding box (+Z front, +Y up). */
+  setView: (preset: ViewPreset) => void;
+  /** Back to the saved camera (or a 3/4 front view when none is saved). */
+  reset: () => void;
+  /** Multiplies the camera distance (< 1 zooms in). */
+  zoom: (factor: number) => void;
+  /** Orbits around the target by the given angles in radians. */
+  rotate: (azimuth: number, polar: number) => void;
+  focusHotspot: (id: number) => void;
 };
 
 export type CarViewerProps = {
@@ -32,6 +43,12 @@ export type CarViewerProps = {
   placing?: boolean;
   onPlace?: (point: { position: Vec3; normal: Vec3 }) => void;
   onReady?: (api: ViewerApi) => void;
+  /** Customer mode: controls bar, keyboard navigation, hint, fullscreen. */
+  controls?: boolean;
+  /** Car name, used in the viewer's accessible name. */
+  label?: string;
+  /** Shown under the canvas until the model has loaded (customer poster). */
+  posterUrl?: string | null;
 };
 
 export const SEVERITY_CLASS: Record<Severity, string> = {
