@@ -17,13 +17,18 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { cn } from "@/lib/cn";
 import { isDrag, toModelSpace } from "@/lib/three/model-space";
 import {
+  AUTO_ROTATE,
+  autoRotateState,
+  autoRotateStep,
   CAMERA_LIMITS,
   dolly,
   easeOut,
   modelBox,
   orbit,
+  pauseAutoRotate,
   poseFromCamera,
   presetPose,
+  releaseAutoRotate,
   type CameraPose,
 } from "./camera-rig";
 import { ViewerControls } from "./viewer-controls";
@@ -223,6 +228,95 @@ function ApiBridge({
   return null;
 }
 
+/**
+ * Hero auto-rotation: spins the camera slowly around the model, pauses while the pointer is down
+ * on the canvas and resumes 3 s after release. Frames are only requested while rotating, while
+ * the canvas is on screen and while the tab is visible (frameloop stays "demand").
+ */
+function AutoRotator({ loaded }: { loaded: boolean }) {
+  const { camera, controls, gl, invalidate } = useThree();
+  const state = useRef(autoRotateState(0, false));
+  const visible = useRef(true);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const orbitControls = controls as unknown as OrbitControlsLike | null;
+    if (!loaded || !orbitControls || started.current) {
+      return;
+    }
+    started.current = true;
+    // Entry turn: start 20° back and ease forward into the resting view.
+    const pose = { position: camera.position.clone(), target: orbitControls.target.clone() };
+    camera.position.copy(orbit(pose, -AUTO_ROTATE.entryAngle, 0));
+    orbitControls.update();
+    state.current = autoRotateState(performance.now(), true);
+    invalidate();
+  }, [loaded, camera, controls, invalidate]);
+
+  useEffect(() => {
+    const canvas = gl.domElement;
+    let timer: number | undefined;
+    let onScreen = true;
+    const kick = () => invalidate();
+    const down = () => {
+      window.clearTimeout(timer);
+      pauseAutoRotate(state.current);
+    };
+    const up = () => {
+      if (state.current.pausedUntil !== Number.POSITIVE_INFINITY) {
+        return;
+      }
+      releaseAutoRotate(state.current, performance.now());
+      window.clearTimeout(timer);
+      timer = window.setTimeout(kick, AUTO_ROTATE.resumeAfterMs);
+    };
+    const update = () => {
+      visible.current = document.visibilityState === "visible" && onScreen;
+      if (visible.current) {
+        kick();
+      }
+    };
+    const observer =
+      typeof IntersectionObserver === "undefined"
+        ? null
+        : new IntersectionObserver((entries) => {
+            onScreen = entries.some((entry) => entry.isIntersecting);
+            update();
+          });
+    observer?.observe(canvas);
+    canvas.addEventListener("pointerdown", down);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      window.clearTimeout(timer);
+      observer?.disconnect();
+      canvas.removeEventListener("pointerdown", down);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, [gl, invalidate]);
+
+  useFrame(() => {
+    const orbitControls = controls as unknown as OrbitControlsLike | null;
+    if (!started.current || !orbitControls) {
+      return;
+    }
+    const { delta, rotating } = autoRotateStep(state.current, performance.now(), visible.current);
+    if (delta !== 0) {
+      const pose = { position: camera.position, target: orbitControls.target };
+      camera.position.copy(orbit(pose, delta, 0));
+      orbitControls.update();
+    }
+    if (rotating) {
+      invalidate();
+    }
+  });
+
+  return null;
+}
+
 /** The 3D canvas with hotspot buttons on top; loaded client-only through `CarViewer`. */
 export default function CarViewerScene({
   url,
@@ -238,6 +332,8 @@ export default function CarViewerScene({
   controls = false,
   label,
   posterUrl,
+  autoRotate = false,
+  className,
 }: CarViewerProps) {
   const reducedMotion = useReducedMotion();
   const elements = useRef(new Map<number, HTMLButtonElement>());
@@ -312,6 +408,7 @@ export default function CarViewerScene({
         "from-surface to-bg focus-visible:focus-ring relative h-80 w-full overflow-hidden rounded-xl bg-linear-to-b md:h-120",
         "data-[fullscreen=true]:h-screen data-[fullscreen=true]:rounded-none",
         placing ? "cursor-crosshair" : "cursor-grab",
+        className,
       )}
     >
       {posterUrl && !loaded ? (
@@ -355,6 +452,7 @@ export default function CarViewerScene({
           reducedMotion={reducedMotion}
           elements={elements}
         />
+        {autoRotate && !reducedMotion ? <AutoRotator loaded={loaded} /> : null}
       </Canvas>
 
       <div className="pointer-events-none absolute inset-0 overflow-hidden">

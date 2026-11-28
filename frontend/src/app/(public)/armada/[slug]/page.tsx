@@ -1,35 +1,10 @@
 import type { Metadata } from "next";
-import { cacheLife } from "next/cache";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CarDetailPage } from "@/components/car-detail/car-detail-page";
 import { CarDetailSkeleton } from "@/components/car-detail/car-detail-skeleton";
-import { ApiError } from "@/lib/api";
 import { formatRupiah } from "@/lib/format";
-import { fetchPublicCar, type PublicCarDetail } from "@/lib/public-api";
-
-const SLUG = /^[a-z0-9][a-z0-9-]{0,119}$/;
-const backendUrl = () => process.env.BACKEND_URL ?? "http://127.0.0.1:8000";
-
-/**
- * Public car data, the same for every visitor, so one cached copy per slug is shared for a few
- * minutes (availability and price are always fetched live on the client). Null when not found.
- */
-async function getPublicCar(slug: string): Promise<PublicCarDetail | null> {
-  "use cache";
-  cacheLife("minutes");
-  if (!SLUG.test(slug)) {
-    return null;
-  }
-  try {
-    return await fetchPublicCar(slug, { server: { baseUrl: backendUrl(), clientIp: null } });
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 404) {
-      return null;
-    }
-    throw error;
-  }
-}
+import { getPublicCar } from "@/lib/server/public-data";
 
 type Params = Promise<{ slug: string }>;
 

@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\V1\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\Public\PublicCarController;
+use App\Http\Controllers\Api\V1\Public\PublicContentController;
 use App\Http\Controllers\Api\V1\Public\PublicReferenceController;
 use App\Http\Middleware\EnsureAdminActive;
 use App\Http\Middleware\EnsureCustomerNotBlocked;
@@ -49,6 +50,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('cars/{slug}', [PublicCarController::class, 'show'])->name('cars.show');
         Route::get('cars/{slug}/availability', [PublicCarController::class, 'availability'])->name('cars.availability');
         Route::get('cars/{slug}/similar', [PublicCarController::class, 'similar'])->name('cars.similar');
+        Route::get('testimonials', [PublicContentController::class, 'testimonials'])->name('testimonials');
+        Route::get('stats', [PublicContentController::class, 'stats'])->name('stats');
     });
 
     // Customer authentication (guard `web`). Login counts failed attempts itself

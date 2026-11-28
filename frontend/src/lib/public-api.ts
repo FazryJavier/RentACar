@@ -228,3 +228,31 @@ export async function fetchReferences(options?: PublicFetchOptions): Promise<Fle
   ]);
   return { branches, categories, brands };
 }
+
+/** Published testimonial; `is_demo` items must carry a visible demo label. */
+export type PublicTestimonial = {
+  name: string;
+  city: string | null;
+  quote: string;
+  rating: number;
+  avatar_url: string | null;
+  is_demo: boolean;
+};
+
+/** Counts computed by the backend from the current data. */
+export type PublicStats = {
+  cars: number;
+  branches: number;
+  categories: number;
+  completed_bookings: number;
+};
+
+export async function fetchTestimonials(
+  options?: PublicFetchOptions,
+): Promise<PublicTestimonial[]> {
+  return (await request<PublicTestimonial[]>("/public/testimonials", options)).data;
+}
+
+export async function fetchStats(options?: PublicFetchOptions): Promise<PublicStats> {
+  return (await request<PublicStats>("/public/stats", options)).data;
+}

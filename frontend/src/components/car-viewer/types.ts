@@ -49,6 +49,10 @@ export type CarViewerProps = {
   label?: string;
   /** Shown under the canvas until the model has loaded (customer poster). */
   posterUrl?: string | null;
+  /** Hero mode: slow automatic rotation, paused while touched (never under reduced motion). */
+  autoRotate?: boolean;
+  /** Extra classes for the viewer container (e.g. a different height). */
+  className?: string;
 };
 
 export const SEVERITY_CLASS: Record<Severity, string> = {

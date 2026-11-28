@@ -78,9 +78,10 @@ export function CarViewer({
  * Customer viewer: shows `placeholder` (the poster) until the area is near the viewport, then
  * mounts `CarViewer`. Without IntersectionObserver the viewer mounts at once.
  */
-export function LazyCarViewer(
-  props: CarViewerProps & { fallback: ReactNode; placeholder: ReactNode },
-) {
+export function LazyCarViewer({
+  wrapperClassName,
+  ...props
+}: CarViewerProps & { fallback: ReactNode; placeholder: ReactNode; wrapperClassName?: string }) {
   const area = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -103,5 +104,9 @@ export function LazyCarViewer(
     return () => observer.disconnect();
   }, []);
 
-  return <div ref={area}>{visible ? <CarViewer {...props} /> : props.placeholder}</div>;
+  return (
+    <div ref={area} className={wrapperClassName}>
+      {visible ? <CarViewer {...props} /> : props.placeholder}
+    </div>
+  );
 }
