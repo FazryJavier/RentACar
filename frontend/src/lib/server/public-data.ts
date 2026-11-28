@@ -34,10 +34,7 @@ async function orNull<T>(load: () => Promise<T>): Promise<T | null> {
   }
 }
 
-/** Car detail by slug; null when it does not exist (other errors are thrown). */
-export async function getPublicCar(slug: string): Promise<PublicCarDetail | null> {
-  "use cache";
-  cacheLife("minutes");
+async function loadPublicCar(slug: string): Promise<PublicCarDetail | null> {
   if (!SLUG.test(slug)) {
     return null;
   }
@@ -51,9 +48,21 @@ export async function getPublicCar(slug: string): Promise<PublicCarDetail | null
   }
 }
 
-/** Car detail for the home hero; null on any failure. */
+/** Car detail by slug; null when it does not exist (other errors are thrown). */
+export async function getPublicCar(slug: string): Promise<PublicCarDetail | null> {
+  "use cache";
+  cacheLife("minutes");
+  return loadPublicCar(slug);
+}
+
+/**
+ * Car detail for the home hero; null on any failure. Errors are caught inside the cached
+ * function: one escaping a "use cache" scope fails the prerender even when caught outside.
+ */
 export async function getHeroCarDetail(slug: string): Promise<PublicCarDetail | null> {
-  return orNull(() => getPublicCar(slug));
+  "use cache";
+  cacheLife("minutes");
+  return orNull(() => loadPublicCar(slug));
 }
 
 export async function getPopularCars(): Promise<PublicCarCard[] | null> {
