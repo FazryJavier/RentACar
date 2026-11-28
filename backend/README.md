@@ -126,6 +126,8 @@ Sanctum SPA (cookie sesi + CSRF) di origin yang sama dengan frontend. Guard `web
 | `GET /branches`, `/categories`, `/brands` | Daftar referensi (cabang aktif) |
 | `GET /testimonials` | Maksimal 6 testimoni terbit, terbaru dulu: `name`, `city`, `quote`, `rating`, `avatar_url`, `is_demo` (tanpa ID atau tautan pemesanan) |
 | `GET /stats` | Jumlah dari database saat diminta: `cars` (mobil aktif), `branches` (cabang aktif), `categories`, `completed_bookings` |
+| `GET /settings` | Daftar kunci publik saja (`App\Domain\Catalog\PublicSettings`): `booking` (`min_days`, `max_days`, `min_lead_minutes`, `max_advance_days`, `payment_window_minutes`), `gps.retention_days`, `content.terms_markdown` (≤ 50.000 karakter); nilai tersimpan atau bawaan seeder, dibatasi ke rentang aman. Rekening bank dan batas internal tidak pernah dikirim |
+| `GET /credits` | Sumber & lisensi model 3D milik mobil aktif, urut nama mobil: `car {slug, name}`, `source_name`, `source_url`, `license`, `is_illustrative` |
 
 - **Jadwal sewa** (`App\Domain\Booking\RentalWindowValidator`, nilai dari tabel `settings`): ambil ≥ sekarang + 2 jam dan ≤ 90 hari, menit :00/:30, di dalam jam operasional cabang (WIB), durasi 1–30 hari. Waktu tanpa offset dibaca sebagai WIB. Error 422: `required`, `invalid_format`, `too_soon`, `too_far`, `invalid_slot`, `outside_operating_hours`, `duration_out_of_range`.
 - **Ketersediaan** (`AvailabilityQuery`): mobil aktif di cabang itu tanpa pemesanan penahan jadwal (menunggu bayar yang belum lewat batas, menunggu verifikasi, dikonfirmasi, berjalan) yang bentrok dengan `[ambil, kembali + jeda 2 jam)` — ekspresi sama dengan constraint `bookings_no_overlap`.

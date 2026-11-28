@@ -3,14 +3,18 @@ import { ApiError } from "@/lib/api";
 import {
   fetchBranches,
   fetchCategories,
+  fetchCredits,
   fetchPublicCar,
   fetchPublicCars,
+  fetchPublicSettings,
   fetchStats,
   fetchTestimonials,
   type PublicBranch,
   type PublicCarCard,
   type PublicCarDetail,
   type PublicCategory,
+  type PublicCredit,
+  type PublicSettings,
   type PublicStats,
   type PublicTestimonial,
 } from "@/lib/public-api";
@@ -93,4 +97,16 @@ export async function getStats(): Promise<PublicStats | null> {
   "use cache";
   cacheLife("minutes");
   return orNull(() => fetchStats(server()));
+}
+
+export async function getPublicSettings(): Promise<PublicSettings | null> {
+  "use cache";
+  cacheLife("minutes");
+  return orNull(() => fetchPublicSettings(server()));
+}
+
+export async function getCredits(): Promise<PublicCredit[] | null> {
+  "use cache";
+  cacheLife("minutes");
+  return orNull(() => fetchCredits(server()));
 }

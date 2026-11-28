@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui";
+import { featuredFaq } from "@/content/faq";
 import { home } from "@/content/home";
 import { Reveal } from "./reveal";
 import { HomeSection, SectionHeading } from "./section-heading";
@@ -10,8 +11,8 @@ export function FaqTeaser() {
       <Reveal>
         <SectionHeading id="faq-title" title={home.faq.title} />
         <Accordion type="single" collapsible className="bg-surface rounded-lg px-4 shadow-sm">
-          {home.faq.items.map((item, index) => (
-            <AccordionItem key={item.question} value={`faq-${index}`}>
+          {featuredFaq().map((item) => (
+            <AccordionItem key={item.id} value={item.id}>
               <AccordionTrigger>{item.question}</AccordionTrigger>
               <AccordionContent>{item.answer}</AccordionContent>
             </AccordionItem>

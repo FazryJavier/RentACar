@@ -8,6 +8,7 @@ Website pelanggan (company profile, katalog, detail 3D, pemesanan) dan admin pan
 - Tailwind CSS 4 dengan token design system (`src/styles/tokens.css`)
 - Radix UI (primitif aksesibel), Lucide (ikon), react-day-picker (kalender), Plus Jakarta Sans via `next/font`
 - Motion (`motion/react`, `LazyMotion` + `domAnimation`) untuk animasi muncul saat di-scroll di beranda
+- react-markdown (render Markdown S&K di server, tanpa HTML mentah)
 - Vitest + Testing Library, Playwright
 - Rencana: React Three Fiber (3D), Leaflet (peta), TanStack Query/Table, React Hook Form + Zod
 
@@ -53,6 +54,14 @@ next.config.ts        Rewrite /api, /sanctum, /docs, /storage → Laravel (BACKE
 - **Section:** tentang singkat (statistik menghitung naik sekali), carousel armada populer (scroll-snap, tombol ◂ ▸, seret mouse, titik di ponsel, tanpa putar otomatis), chip kategori (`/armada?category=…`), banner promo berlabel "Promo ilustrasi — demo", cara sewa, testimoni (label "Contoh testimoni — data demo" untuk `is_demo`), FAQ singkat.
 - **Animasi:** `Reveal` hanya menyembunyikan konten yang masih di bawah layar setelah hidrasi (HTML server selalu terlihat); reduced motion = tanpa gerak.
 - E2E `tests/e2e/home.spec.ts` butuh backend + seed (cabang, kategori).
+
+## Halaman informasi
+
+- `/tentang-kami`, `/cabang`, `/cara-sewa`, `/faq`, `/syarat-ketentuan`, `/kebijakan-privasi`, `/kredit` (komponen di `src/components/info/`, teks di `src/content/`). Data dari loader server ter-cache (`getStats`, `getBranches`, `getPublicSettings`, `getCredits`); bagian yang datanya gagal dimuat disembunyikan.
+- **Cabang:** kartu cabang adalah jalur utama (keyboard, pembaca layar); peta Leaflet (tanpa `react-leaflet`) dimuat di klien saat mendekati layar, satu pin per cabang, atribusi OpenStreetMap, tombol "Lihat di peta" memusatkan pin.
+- **S&K:** Markdown dari `/public/settings` dirender di server dengan `react-markdown`: HTML mentah dilewati, gambar dibuang, URL selain `http(s)`/`mailto`/`tel`/relatif/anchor dihapus, tautan luar `rel="noopener noreferrer nofollow"`; judul `#` pertama dibuang dan heading turun satu tingkat agar halaman tetap punya satu `h1`.
+- **FAQ:** satu sumber `src/content/faq.ts` (juga dipakai teaser beranda); pencarian tanpa membedakan aksen, semua kata harus cocok, jumlah hasil diumumkan.
+- E2E `tests/e2e/info-pages.spec.ts` butuh backend (tes cabang dilewati tanpa data cabang).
 
 ## Detail mobil (`/armada/[slug]`)
 
