@@ -5,9 +5,7 @@ test.describe("smoke @critical", () => {
     const response = await page.goto("/");
 
     expect(response?.status()).toBe(200);
-    await expect(
-      page.getByRole("heading", { level: 1, name: /Sewa mobil nyaman/ }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: /Sewa mobil nyaman/ })).toBeVisible();
   });
 
   test("API health is reachable through the same origin", async ({ request }) => {
