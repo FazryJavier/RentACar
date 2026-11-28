@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("smoke @critical", () => {
-  test("home page loads with the placeholder", async ({ page }) => {
+  test("home page loads with its hero heading", async ({ page }) => {
     const response = await page.goto("/");
 
     expect(response?.status()).toBe(200);
     await expect(
-      page.getByRole("heading", { level: 1, name: /RentACar — dalam pengembangan/ }),
+      page.getByRole("heading", { level: 1, name: /Sewa mobil nyaman/ }),
     ).toBeVisible();
   });
 

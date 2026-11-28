@@ -7,6 +7,7 @@ Website pelanggan (company profile, katalog, detail 3D, pemesanan) dan admin pan
 - Node.js 24, TypeScript (strict), Next.js 16 (App Router), React 19
 - Tailwind CSS 4 dengan token design system (`src/styles/tokens.css`)
 - Radix UI (primitif aksesibel), Lucide (ikon), react-day-picker (kalender), Plus Jakarta Sans via `next/font`
+- Motion (`motion/react`, `LazyMotion` + `domAnimation`) untuk animasi muncul saat di-scroll di beranda
 - Vitest + Testing Library, Playwright
 - Rencana: React Three Fiber (3D), Leaflet (peta), TanStack Query/Table, React Hook Form + Zod
 
@@ -45,9 +46,17 @@ next.config.ts        Rewrite /api, /sanctum, /docs, /storage → Laravel (BACKE
 - **Layout:** filter di sidebar mulai 1024 px; di bawahnya lewat bottom sheet "Filter (n)" yang baru diterapkan saat "Terapkan". Grid 1/2/3 kolom (0/600/1024 px); tombol grid/daftar tampil mulai 600 px. Gagal 422 dari API (mis. tanggal terlalu dekat) ditampilkan di field form cari.
 - E2E `tests/e2e/fleet.spec.ts` butuh backend + seed dengan minimal satu mobil aktif (dilewati bila katalog kosong).
 
+## Beranda (`/`)
+
+- **Data:** loader server di `src/lib/server/public-data.ts` (`"use cache"`, `cacheLife("minutes")`, sama untuk semua pengunjung): mobil populer (`/public/cars?sort=popular`), cabang, kategori, testimoni (`/public/testimonials`), statistik (`/public/stats`) dan detail mobil hero. Tiap loader mengembalikan `null` saat gagal sehingga hanya section terkait yang disembunyikan. Teks statis ada di `src/content/home.ts`; angka selalu dari API.
+- **Hero:** mobil unggulan (`featuredCarSlug`) → mobil populer pertama yang punya model 3D → foto mobil → hanya dekorasi. Poster dirender di server (`fetchpriority="high"`), penampil 3D mode hero (`autoRotate`: 8°/detik, berhenti saat disentuh dan lanjut 3 detik setelah dilepas, putaran masuk 20°, tanpa render saat di luar layar/tab tersembunyi; tidak berputar dengan reduced motion) dipasang di atasnya. Form cari memakai `SearchForm` dan menuju `/armada` dengan parameter yang sama.
+- **Section:** tentang singkat (statistik menghitung naik sekali), carousel armada populer (scroll-snap, tombol ◂ ▸, seret mouse, titik di ponsel, tanpa putar otomatis), chip kategori (`/armada?category=…`), banner promo berlabel "Promo ilustrasi — demo", cara sewa, testimoni (label "Contoh testimoni — data demo" untuk `is_demo`), FAQ singkat.
+- **Animasi:** `Reveal` hanya menyembunyikan konten yang masih di bawah layar setelah hidrasi (HTML server selalu terlihat); reduced motion = tanpa gerak.
+- E2E `tests/e2e/home.spec.ts` butuh backend + seed (cabang, kategori).
+
 ## Detail mobil (`/armada/[slug]`)
 
-- **Data:** `getPublicCar(slug)` di server (`"use cache"`, `cacheLife("minutes")`, sama untuk semua pengunjung) dipakai halaman dan `generateMetadata`. Ketersediaan & harga selalu diambil langsung di klien dari `/availability` (TanStack Query) setelah tanggal dipilih; tanggal disimpan di URL (`pickup_at`, `return_at`, `branch` = cabang mobil) dengan `router.replace`. Mobil tidak ada → `(public)/not-found.tsx` dengan `noindex` (status tetap 200 karena shell sudah di-stream; perilaku Cache Components).
+- **Data:** `getPublicCar(slug)` dari `src/lib/server/public-data.ts` (`"use cache"`, `cacheLife("minutes")`, sama untuk semua pengunjung) dipakai halaman dan `generateMetadata`. Ketersediaan & harga selalu diambil langsung di klien dari `/availability` (TanStack Query) setelah tanggal dipilih; tanggal disimpan di URL (`pickup_at`, `return_at`, `branch` = cabang mobil) dengan `router.replace`. Mobil tidak ada → `(public)/not-found.tsx` dengan `noindex` (status tetap 200 karena shell sudah di-stream; perilaku Cache Components).
 - **Penampil (mode pelanggan):** poster tampil dulu; kode three.js dan `.glb` baru dimuat saat area penampil mendekati layar dan WebGL ada (`LazyCarViewer`). Kontrol Depan/Samping/Belakang/Interior (dihitung dari bounding box, konvensi glTF +Z = depan), zoom, atur ulang (ke sudut kamera admin), layar penuh; panah/± saat penampil difokus; reduced motion = kamera langsung pindah tanpa denyut hotspot. Tanpa model/WebGL/gagal muat → galeri + "Tampilan 3D tidak tersedia".
 - **Kondisi:** hotspot hanya untuk penanda yang punya posisi pada model saat ini; daftar teks memuat semua penanda aktif dan membuka panel yang sama (kartu di desktop, bottom sheet di bawah 1024 px; fokus kembali ke pembuka).
 - **Pesan:** `BookingCard` sticky mulai 1024 px; di bawahnya `MobileBookingBar` (bar bawah 72 px) membuka kartu yang sama di bottom sheet. "Pesan Sekarang" menuju `/checkout?car=…&pickup_at=…&return_at=…`.

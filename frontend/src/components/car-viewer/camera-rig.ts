@@ -65,3 +65,65 @@ export function easeOut(t: number): number {
 }
 
 export const CAMERA_LIMITS = { min: MIN_DISTANCE, max: MAX_DISTANCE };
+
+/** Hero auto-rotation: 8°/s, resumes 3 s after the pointer is released, 20° entry turn. */
+export const AUTO_ROTATE = {
+  speed: (8 * Math.PI) / 180,
+  resumeAfterMs: 3000,
+  entryAngle: (20 * Math.PI) / 180,
+  entryMs: 400,
+} as const;
+
+export type AutoRotateState = {
+  /** Time of the previous rotating frame (null after a pause, so no jump on resume). */
+  last: number | null;
+  /** Rotation is held until this time (Infinity while the pointer is down). */
+  pausedUntil: number;
+  /** Start of the entry turn, null when it is done or skipped. */
+  entryStart: number | null;
+  /** Eased progress of the entry turn already applied. */
+  entryApplied: number;
+};
+
+export function autoRotateState(now: number, entry: boolean): AutoRotateState {
+  return { last: null, pausedUntil: 0, entryStart: entry ? now : null, entryApplied: 0 };
+}
+
+export function pauseAutoRotate(state: AutoRotateState): void {
+  state.pausedUntil = Number.POSITIVE_INFINITY;
+  state.last = null;
+}
+
+export function releaseAutoRotate(state: AutoRotateState, now: number): void {
+  state.pausedUntil = now + AUTO_ROTATE.resumeAfterMs;
+}
+
+/**
+ * Azimuth change (radians) for the frame at `now`. The entry turn always completes; the slow
+ * spin only runs while `visible` and not paused. `rotating` says whether another frame is needed.
+ */
+export function autoRotateStep(
+  state: AutoRotateState,
+  now: number,
+  visible: boolean,
+): { delta: number; rotating: boolean } {
+  let delta = 0;
+  if (state.entryStart !== null) {
+    const progress = Math.min(1, (now - state.entryStart) / AUTO_ROTATE.entryMs);
+    const eased = easeOut(progress);
+    delta += AUTO_ROTATE.entryAngle * (eased - state.entryApplied);
+    state.entryApplied = eased;
+    if (progress >= 1) {
+      state.entryStart = null;
+    }
+  }
+  const spinning = visible && now >= state.pausedUntil;
+  if (spinning) {
+    const last = state.last ?? now;
+    delta += AUTO_ROTATE.speed * Math.min(0.1, (now - last) / 1000);
+    state.last = now;
+  } else {
+    state.last = null;
+  }
+  return { delta, rotating: spinning || state.entryStart !== null };
+}
