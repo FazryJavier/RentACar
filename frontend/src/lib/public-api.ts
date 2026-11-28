@@ -256,3 +256,33 @@ export async function fetchTestimonials(
 export async function fetchStats(options?: PublicFetchOptions): Promise<PublicStats> {
   return (await request<PublicStats>("/public/stats", options)).data;
 }
+
+/** Allowlisted public settings (booking limits, GPS retention, terms text). */
+export type PublicSettings = {
+  booking: {
+    min_days: number;
+    max_days: number;
+    min_lead_minutes: number;
+    max_advance_days: number;
+    payment_window_minutes: number;
+  };
+  gps: { retention_days: number };
+  content: { terms_markdown: string };
+};
+
+/** Source and licence of a 3D model shown on the site. */
+export type PublicCredit = {
+  car: { slug: string; name: string };
+  source_name: string;
+  source_url: string | null;
+  license: string;
+  is_illustrative: boolean;
+};
+
+export async function fetchPublicSettings(options?: PublicFetchOptions): Promise<PublicSettings> {
+  return (await request<PublicSettings>("/public/settings", options)).data;
+}
+
+export async function fetchCredits(options?: PublicFetchOptions): Promise<PublicCredit[]> {
+  return (await request<PublicCredit[]>("/public/credits", options)).data;
+}

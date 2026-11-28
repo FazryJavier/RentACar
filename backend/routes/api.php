@@ -52,6 +52,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('cars/{slug}/similar', [PublicCarController::class, 'similar'])->name('cars.similar');
         Route::get('testimonials', [PublicContentController::class, 'testimonials'])->name('testimonials');
         Route::get('stats', [PublicContentController::class, 'stats'])->name('stats');
+        Route::get('settings', [PublicContentController::class, 'settings'])->name('settings');
+        Route::get('credits', [PublicContentController::class, 'credits'])->name('credits');
     });
 
     // Customer authentication (guard `web`). Login counts failed attempts itself

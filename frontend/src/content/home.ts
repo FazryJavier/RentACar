@@ -3,7 +3,6 @@
  * from the API, never from this file.
  */
 
-export type HomeFaqItem = { question: string; answer: string };
 export type HomeStep = { title: string; text: string };
 
 export const home = {
@@ -59,30 +58,5 @@ export const home = {
   },
   faq: {
     title: "Pertanyaan umum",
-    items: [
-      {
-        question: "Apa saja syarat menyewa mobil?",
-        answer:
-          "Akun pelanggan dan SIM A yang masih berlaku. Dokumen diperiksa saat pengambilan mobil.",
-      },
-      {
-        question: "Bagaimana cara membayar?",
-        answer:
-          "Pembayaran di proyek demo ini adalah simulasi transfer bank dengan unggah bukti bayar.",
-      },
-      {
-        question: "Apakah ada deposit?",
-        answer: "Ya. Besarnya tertera di setiap mobil dan dikembalikan setelah mobil diperiksa.",
-      },
-      {
-        question: "Bisakah membatalkan pemesanan?",
-        answer: "Bisa, selama pemesanan belum dikonfirmasi admin.",
-      },
-      {
-        question: "Apa arti penanda di model 3D?",
-        answer:
-          "Penanda bernomor menunjukkan catatan kondisi mobil, misalnya goresan, lengkap dengan foto dan tanggal inspeksi.",
-      },
-    ] satisfies HomeFaqItem[],
   },
 } as const;
