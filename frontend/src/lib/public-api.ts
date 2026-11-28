@@ -1,4 +1,5 @@
 import { ApiError, type ApiFieldError, type PageMeta } from "@/lib/api";
+import type { ConditionAreaValue, ConditionSeverityValue } from "@/lib/condition-labels";
 
 /** Public data shapes from `/api/v1/public/*` (see the backend README). */
 export type PublicImage = { url: string; srcset: string; alt: string };
@@ -110,9 +111,107 @@ export async function fetchBrands(options?: PublicFetchOptions): Promise<PublicB
   return (await request<PublicBrand[]>("/public/brands", options)).data;
 }
 
+export type PublicCondition = {
+  number: number;
+  area: ConditionAreaValue;
+  severity: ConditionSeverityValue;
+  description: string;
+  /** Model-space point; null for area-only markers or markers waiting for repositioning. */
+  position: [number, number, number] | null;
+  normal: [number, number, number] | null;
+  needs_reposition: boolean;
+  photos: { url: string }[];
+  /** Date only (`YYYY-MM-DD`). */
+  inspected_on: string;
+};
+
+export type PublicModel3d = {
+  url: string;
+  poster_url: string | null;
+  camera: { position: [number, number, number]; target: [number, number, number] } | null;
+  is_illustrative: boolean;
+  credit: { source_name: string; source_url: string | null; license: string };
+};
+
+export type PublicCarDetail = PublicCarCard & {
+  year: number;
+  color: string;
+  luggage_capacity: number | null;
+  description: string | null;
+  features: string[];
+  deposit: number;
+  photos: PublicImage[];
+  model_3d: PublicModel3d | null;
+  conditions: PublicCondition[];
+  inspection_summary: {
+    last_inspected_at: string | null;
+    active_conditions: { minor: number; moderate: number; major: number };
+    odometer_km: number | null;
+  };
+};
+
+export type PublicAvailability = {
+  available: boolean;
+  price: {
+    daily_price: number;
+    rental_days: number;
+    rental_subtotal: number;
+    deposit: number;
+    total_amount: number;
+  };
+  price_token: string;
+  reason: "booked" | "other_branch" | "unavailable" | null;
+};
+
+export type RentalQuery = { branch: string; pickupAt: string; returnAt: string };
+
+function rentalQuery(rental: RentalQuery): string {
+  return new URLSearchParams({
+    branch: rental.branch,
+    pickup_at: rental.pickupAt,
+    return_at: rental.returnAt,
+  }).toString();
+}
+
+export async function fetchPublicCar(
+  slug: string,
+  options?: PublicFetchOptions,
+): Promise<PublicCarDetail> {
+  return (await request<PublicCarDetail>(`/public/cars/${encodeURIComponent(slug)}`, options)).data;
+}
+
+export async function fetchAvailability(
+  slug: string,
+  rental: RentalQuery,
+  options?: PublicFetchOptions,
+): Promise<PublicAvailability> {
+  const path = `/public/cars/${encodeURIComponent(slug)}/availability?${rentalQuery(rental)}`;
+  return (await request<PublicAvailability>(path, options)).data;
+}
+
+export async function fetchSimilar(
+  slug: string,
+  rental: RentalQuery | null,
+  options?: PublicFetchOptions,
+): Promise<PublicCarCard[]> {
+  const query = rental ? `?${rentalQuery(rental)}` : "";
+  const path = `/public/cars/${encodeURIComponent(slug)}/similar${query}`;
+  return (await request<PublicCarCard[]>(path, options)).data;
+}
+
 export const publicKeys = {
   cars: (apiQuery: string) => ["public-cars", apiQuery] as const,
   references: ["public-references"] as const,
+  availability: (slug: string, rental: RentalQuery) =>
+    ["public-availability", slug, rental.branch, rental.pickupAt, rental.returnAt] as const,
+  similar: (slug: string, rental: RentalQuery | null) =>
+    [
+      "public-similar",
+      slug,
+      rental?.branch ?? null,
+      rental?.pickupAt ?? null,
+      rental?.returnAt ?? null,
+    ] as const,
 };
 
 export type FleetReferences = {

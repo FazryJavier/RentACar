@@ -1,7 +1,7 @@
 /**
  * State of the fleet page as readable URL parameters (`/armada?branch=…&category=suv,mpv`),
  * and its mapping to the public API query (`filter[category]=suv,mpv`). Unknown or malformed
- * values are dropped (FRD F-01 A4).
+ * values are dropped.
  */
 
 export const SORTS = ["popular", "price", "-price", "-newest"] as const;

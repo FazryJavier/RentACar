@@ -20,6 +20,7 @@ src/app/              Routing (App Router)
   dev/ui/             Galeri komponen (hanya development)
 src/components/layout/ SiteShell, Header, MobileMenu, DemoBanner, Footer, NewsletterForm
 src/components/fleet/ Halaman armada: SearchForm, CarCard, FilterPanel/FilterSheet, FleetResults
+src/components/car-detail/ Detail mobil: penampil + panel kondisi, galeri, BookingCard, MobileBookingBar, SimilarCars
 src/components/ui/    Komponen dasar (Button, Field, Select, DateRangePicker, Dialog, Toast, ...)
 src/styles/tokens.css Token warna, tipografi, spacing, radius, shadow, z-index, breakpoint, motion
 src/lib/              cn(), apiGet/ApiError, format Rupiah/WIB, helper tanggal WIB, navigasi
@@ -43,6 +44,15 @@ next.config.ts        Rewrite /api, /sanctum, /docs, /storage → Laravel (BACKE
 - **IP pengunjung:** permintaan dari server Next.js ke `BACKEND_URL` meneruskan `X-Forwarded-For` (dari header permintaan masuk) agar batas laju publik 60/menit tetap per pengunjung. Saat deploy, reverse proxy wajib meneruskan header ini dan Laravel harus mempercayai host Next.js.
 - **Layout:** filter di sidebar mulai 1024 px; di bawahnya lewat bottom sheet "Filter (n)" yang baru diterapkan saat "Terapkan". Grid 1/2/3 kolom (0/600/1024 px); tombol grid/daftar tampil mulai 600 px. Gagal 422 dari API (mis. tanggal terlalu dekat) ditampilkan di field form cari.
 - E2E `tests/e2e/fleet.spec.ts` butuh backend + seed dengan minimal satu mobil aktif (dilewati bila katalog kosong).
+
+## Detail mobil (`/armada/[slug]`)
+
+- **Data:** `getPublicCar(slug)` di server (`"use cache"`, `cacheLife("minutes")`, sama untuk semua pengunjung) dipakai halaman dan `generateMetadata`. Ketersediaan & harga selalu diambil langsung di klien dari `/availability` (TanStack Query) setelah tanggal dipilih; tanggal disimpan di URL (`pickup_at`, `return_at`, `branch` = cabang mobil) dengan `router.replace`. Mobil tidak ada → `(public)/not-found.tsx` dengan `noindex` (status tetap 200 karena shell sudah di-stream; perilaku Cache Components).
+- **Penampil (mode pelanggan):** poster tampil dulu; kode three.js dan `.glb` baru dimuat saat area penampil mendekati layar dan WebGL ada (`LazyCarViewer`). Kontrol Depan/Samping/Belakang/Interior (dihitung dari bounding box, konvensi glTF +Z = depan), zoom, atur ulang (ke sudut kamera admin), layar penuh; panah/± saat penampil difokus; reduced motion = kamera langsung pindah tanpa denyut hotspot. Tanpa model/WebGL/gagal muat → galeri + "Tampilan 3D tidak tersedia".
+- **Kondisi:** hotspot hanya untuk penanda yang punya posisi pada model saat ini; daftar teks memuat semua penanda aktif dan membuka panel yang sama (kartu di desktop, bottom sheet di bawah 1024 px; fokus kembali ke pembuka).
+- **Pesan:** `BookingCard` sticky mulai 1024 px; di bawahnya `MobileBookingBar` (bar bawah 72 px) membuka kartu yang sama di bottom sheet. "Pesan Sekarang" menuju `/checkout?car=…&pickup_at=…&return_at=…`.
+- `SiteShell` membungkus `Header` dengan `Suspense` (fallback tanpa menu aktif) karena path adalah data runtime pada route berparameter.
+- E2E `tests/e2e/car-detail.spec.ts` butuh backend + seed dengan minimal satu mobil aktif.
 
 ## Akun pelanggan
 

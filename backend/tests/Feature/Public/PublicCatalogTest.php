@@ -194,7 +194,7 @@ describe('availability search', function () {
 describe('detail, availability and similar', function () {
     it('shows public details without private data or resolved markers', function () {
         $car = publicCar(['plate_number' => 'B 1234 XYZ', 'odometer_km' => 45000, 'last_inspected_at' => CarbonImmutable::parse('2026-11-20T02:00:00Z')]);
-        $model = CarModel3d::factory()->create(['car_id' => $car->id, 'model_version' => 2, 'camera' => ['position' => [1, 2, 3], 'target' => [0, 0, 0]], 'license' => 'CC-BY-4.0']);
+        CarModel3d::factory()->create(['car_id' => $car->id, 'model_version' => 2, 'camera' => ['position' => [1, 2, 3], 'target' => [0, 0, 0]], 'license' => 'CC-BY-4.0']);
         CarCondition::factory()->create(['car_id' => $car->id, 'severity' => 'minor', 'position' => [0, 1, 0], 'normal' => [0, 1, 0], 'model_version' => 2, 'created_at' => now()->subDays(2)]);
         CarCondition::factory()->create(['car_id' => $car->id, 'severity' => 'major', 'position' => [1, 1, 0], 'normal' => [0, 1, 0], 'model_version' => 1, 'created_at' => now()->subDay()]);
         CarCondition::factory()->create(['car_id' => $car->id, 'severity' => 'moderate', 'is_resolved' => true, 'resolved_at' => now()]);
@@ -215,7 +215,10 @@ describe('detail, availability and similar', function () {
                 'active_conditions' => ['minor' => 1, 'moderate' => 0, 'major' => 1],
                 'odometer_km' => 45000,
             ]);
-        expect($model->id)->not->toBeIn(array_values(array_filter($data, 'is_int')));
+        // No internal ids anywhere in the nested objects (checked by key, not by value, so a factory
+        // value equal to an id cannot make the test fail at random).
+        expect($data['model_3d'])->not->toHaveKey('id')
+            ->and($data['conditions'][0])->not->toHaveKeys(['id', 'car_id', 'model_version']);
         $response->assertHeader('Cache-Control', 'max-age=60, public, stale-while-revalidate=300');
     });
 

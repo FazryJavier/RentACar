@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -85,7 +86,7 @@ describe("Button", () => {
   it("renders a link with button styles via asChild", () => {
     render(
       <Button asChild variant="secondary">
-        <a href="/armada">Lihat armada</a>
+        <Link href="/armada">Lihat armada</Link>
       </Button>,
     );
     const link = screen.getByRole("link", { name: "Lihat armada" });
